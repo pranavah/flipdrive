@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-Book & Magazine Reader</title>
+  <title>FlipDrive | Publication Reader</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -14,7 +14,7 @@
       padding: 0;
     }
     body {
-      background: #1e1e24;
+      background: #0b0f19;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: flex;
       flex-direction: column;
@@ -24,35 +24,92 @@
       overflow-x: hidden;
       color: #fff;
     }
+
+    #top-nav {
+      position: fixed;
+      top: 14px;
+      left: 18px;
+      z-index: 1000;
+    }
+    .nav-btn {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      padding: 8px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+    }
+    .nav-btn:hover {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    #resume-toast {
+      position: fixed;
+      top: 16px;
+      right: 18px;
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid #3b82f6;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    #resume-toast button {
+      background: #3b82f6;
+      border: none;
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
     #toolbar {
       position: fixed;
       bottom: 20px;
       display: flex;
       gap: 12px;
-      background: rgba(30, 30, 36, 0.85);
-      padding: 10px 18px;
+      background: rgba(21, 29, 48, 0.88);
+      padding: 8px 16px;
       border-radius: 30px;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
       z-index: 1000;
     }
-    button {
-      background: #3b82f6;
-      border: none;
+    button.tool-btn {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
       color: #fff;
-      padding: 8px 16px;
+      padding: 6px 14px;
       border-radius: 20px;
       cursor: pointer;
+      font-size: 13px;
       font-weight: 500;
       transition: background 0.2s;
     }
-    button:hover {
-      background: #2563eb;
+    button.tool-btn:hover {
+      background: #3b82f6;
     }
     #page-info {
       display: flex;
       align-items: center;
-      font-size: 14px;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      color: #cbd5e1;
     }
     #flipbook-viewport {
       display: flex;
@@ -62,7 +119,7 @@
       height: 85vh;
     }
     #flipbook {
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.7);
     }
     .page {
       background-color: #fff;
@@ -75,60 +132,131 @@
     }
     #loading {
       position: absolute;
-      font-size: 18px;
-      letter-spacing: 0.5px;
+      font-size: 16px;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
 
-  <div id="loading">Loading publication...</div>
+  <div id="top-nav">
+    <a href="index.html" class="nav-btn">
+      &larr; Back to Catalogue
+    </a>
+  </div>
+
+  <div id="resume-toast">
+    <span id="resume-text">Resumed at page 1</span>
+    <button id="btn-restart">Restart at Page 1</button>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <span>Loading publication...</span>
+  </div>
 
   <div id="flipbook-viewport">
     <div id="flipbook"></div>
   </div>
 
   <div id="toolbar">
-    <button id="prev-btn">Prev</button>
-    <div id="page-info"><span id="page-num">1</span> / <span id="total-pages">-</span></div>
-    <button id="next-btn">Next</button>
-    <button id="zoom-toggle">Fit/Zoom</button>
+    <button class="tool-btn" id="prev-btn">&lsaquo; Prev</button>
+    <div id="page-info"><span id="page-num">1</span>&nbsp;/&nbsp;<span id="total-pages">-</span></div>
+    <button class="tool-btn" id="next-btn">Next &rsaquo;</button>
   </div>
 
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    // Parse Drive File ID from URL: reader.html?id=YOUR_DRIVE_FILE_ID
+    const STORAGE_KEY_PROGRESS = 'flipdrive_reading_progress';
+    const DEFAULT_GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzadHLrOFoiZfPf0GiWK8zIIt5yEiN7kPIgoMBM1Yl267ApwX0k74RlH2DMvzv7n9Lg/exec";
+
     const urlParams = new URLSearchParams(window.location.search);
     const driveFileId = urlParams.get('id');
-
-    // Google Drive direct stream URL format
-    const pdfUrl = driveFileId 
-      ? `https://drive.google.com/uc?export=download&id=${driveFileId}`
-      : 'sample.pdf';
+    const directPdf = urlParams.get('pdf');
+    const requestedPage = parseInt(urlParams.get('page'), 10);
 
     let pdfDoc = null;
     let totalPages = 0;
 
+    function getSavedProgress(id) {
+      if (!id) return null;
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_PROGRESS);
+        const data = stored ? JSON.parse(stored) : {};
+        return data[id] || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function saveProgress(id, page, total) {
+      if (!id || !page) return;
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_PROGRESS);
+        const data = stored ? JSON.parse(stored) : {};
+        data[id] = {
+          fileId: id,
+          fileName: data[id]?.fileName || 'Document',
+          currentPage: page,
+          totalPages: total,
+          percent: total > 0 ? Math.round((page / total) * 100) : 0,
+          updatedAt: Date.now()
+        };
+        localStorage.setItem(STORAGE_KEY_PROGRESS, JSON.stringify(data));
+      } catch (e) {}
+    }
+
     async function loadPDF() {
       try {
-        pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+        if (!driveFileId && !directPdf) {
+          throw new Error("No publication ID provided. Pass ?id=DRIVE_FILE_ID");
+        }
+
+        if (directPdf) {
+          pdfDoc = await pdfjsLib.getDocument(directPdf).promise;
+        } else {
+          // Stream via Google Apps Script bridge
+          const resp = await fetch(`${DEFAULT_GAS_ENDPOINT}?id=${driveFileId}`);
+          const data = await resp.json();
+          if (data.status === 'error') {
+            throw new Error(data.message || 'Apps Script bridge failed to fetch file.');
+          }
+          const raw = atob(data.base64);
+          const bytes = new Uint8Array(raw.length);
+          for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+          pdfDoc = await pdfjsLib.getDocument({ data: bytes }).promise;
+          if (data.name) document.title = `${data.name} | FlipDrive`;
+        }
+
         totalPages = pdfDoc.numPages;
         document.getElementById('total-pages').textContent = totalPages;
         document.getElementById('loading').style.display = 'none';
 
         const isMobile = window.innerWidth <= 768;
-        const bookWidth = isMobile ? window.innerWidth * 0.9 : Math.min(window.innerWidth * 0.85, 1000);
-        const bookHeight = isMobile ? window.innerHeight * 0.75 : Math.min(window.innerHeight * 0.8, 700);
+        const bookWidth = isMobile ? window.innerWidth * 0.92 : Math.min(window.innerWidth * 0.88, 1100);
+        const bookHeight = isMobile ? window.innerHeight * 0.78 : Math.min(window.innerHeight * 0.82, 740);
 
-        // Render each page into turn.js elements
         for (let i = 1; i <= totalPages; i++) {
-          const pageDiv = $('<div />', { class: 'page' });
+          const pageDiv = $('<div />', { class: 'page', id: `p-${i}` });
           const canvas = $('<canvas />')[0];
           pageDiv.append(canvas);
           $('#flipbook').append(pageDiv);
-
-          renderPage(i, canvas);
         }
 
         // Initialize Turn.js
@@ -141,36 +269,71 @@
           when: {
             turned: function(e, page) {
               document.getElementById('page-num').textContent = page;
+              renderNeighbors(page);
+              if (driveFileId) saveProgress(driveFileId, page, totalPages);
             }
           }
         });
 
+        // Determine starting page & resume
+        const saved = getSavedProgress(driveFileId);
+        let startPage = requestedPage || saved?.currentPage || 1;
+        if (startPage > totalPages) startPage = totalPages;
+
+        renderNeighbors(startPage);
+
+        if (startPage > 1) {
+          $('#flipbook').turn('page', startPage);
+          $('#resume-text').text(`Resumed reading at page ${startPage}`);
+          $('#resume-toast').css('display', 'flex');
+          setTimeout(() => $('#resume-toast').fadeOut(), 6000);
+        }
+
       } catch (err) {
-        document.getElementById('loading').textContent = 'Failed to load PDF. Verify sharing permissions.';
+        document.getElementById('loading').innerHTML = `
+          <div style="color:#ef4444; text-align:center; max-width:400px; line-height:1.5;">
+            Failed to load PDF.<br><br><span style="font-size:13px; color:#cbd5e1;">${err.message}</span>
+          </div>
+        `;
       }
     }
 
-    async function renderPage(num, canvas) {
-      const page = await pdfDoc.getPage(num);
-      const viewport = page.getViewport({ scale: 2 }); // High DPI rendering
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      const renderContext = {
-        canvasContext: canvas.getContext('2d'),
-        viewport: viewport
-      };
-      await page.render(renderContext).promise;
+    const rendered = new Set();
+    async function renderPageCanvas(num) {
+      if (rendered.has(num)) return;
+      rendered.add(num);
+      try {
+        const page = await pdfDoc.getPage(num);
+        const canvas = $(`#p-${num} canvas`)[0];
+        if (!canvas) return;
+        const viewport = page.getViewport({ scale: 1.8 });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+      } catch (e) {}
     }
 
-    // Controls
+    function renderNeighbors(num) {
+      const neighbors = [num];
+      if (num > 1) neighbors.push(num - 1);
+      if (num < totalPages) neighbors.push(num + 1);
+      if (num + 2 <= totalPages) neighbors.push(num + 2);
+      if (num - 2 >= 1) neighbors.push(num - 2);
+      neighbors.forEach(p => renderPageCanvas(p));
+    }
+
+    $('#btn-restart').on('click', () => {
+      $('#flipbook').turn('page', 1);
+      $('#resume-toast').hide();
+    });
+
     $('#prev-btn').on('click', () => $('#flipbook').turn('previous'));
     $('#next-btn').on('click', () => $('#flipbook').turn('next'));
 
     window.addEventListener('resize', () => {
       const isMobile = window.innerWidth <= 768;
-      const width = isMobile ? window.innerWidth * 0.9 : Math.min(window.innerWidth * 0.85, 1000);
-      const height = isMobile ? window.innerHeight * 0.75 : Math.min(window.innerHeight * 0.8, 700);
+      const width = isMobile ? window.innerWidth * 0.92 : Math.min(window.innerWidth * 0.88, 1100);
+      const height = isMobile ? window.innerHeight * 0.78 : Math.min(window.innerHeight * 0.82, 740);
       $('#flipbook').turn('display', isMobile ? 'single' : 'double');
       $('#flipbook').turn('size', width, height);
     });

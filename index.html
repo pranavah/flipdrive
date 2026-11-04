@@ -3,45 +3,645 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FlipDrive | Digital Flipbook Reader</title>
+  <title>FlipDrive | Google Drive PDF Catalogue & 3D Flipbook Reader</title>
   
-  <!-- CDNs for Turn.js & PDF.js -->
+  <!-- CDNs for jQuery, Turn.js & PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  
+
+  <!-- Google Identity Services & Google API for OAuth + Picker -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js" async defer></script>
+
   <style>
+    :root {
+      --bg-main: #0b0f19;
+      --bg-card: #151d30;
+      --bg-card-hover: #1c2742;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-blue: #3b82f6;
+      --accent-blue-hover: #2563eb;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
     }
 
     body {
-      background: #111218;
-      color: #f1f5f9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Common Button Styles */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+      color: #ffffff;
+      box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45);
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      color: #e2e8f0;
+    }
+    .btn-secondary:hover {
+      background: #27354f;
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+    }
+    .btn-ghost:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 13px;
+      border-radius: 6px;
+    }
+
+    /* Header */
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 14px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #ffffff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-badge {
+      font-size: 11px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .folder-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #cbd5e1;
+      max-width: 320px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .folder-pill:hover {
+      border-color: var(--accent-blue);
+      background: #243248;
+    }
+    .folder-pill-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1380px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 24px 60px;
+    }
+
+    /* Catalogue View */
+    #view-catalogue {
+      display: block;
+    }
+
+    /* Hero / Onboarding when no folder is selected */
+    .hero-linker {
+      background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 40%),
+                  radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.08), transparent 40%),
+                  #111827;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 32px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .hero-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 12px;
+    }
+    .hero-subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin: 0 auto 28px;
+      line-height: 1.6;
+    }
+    .hero-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    /* Shelf: Continue Reading */
+    .shelf-container {
+      margin-bottom: 36px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .section-title svg {
+      color: var(--accent-cyan);
+    }
+
+    .continue-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(21, 29, 48, 0.9));
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .continue-card:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-2px);
+    }
+    .continue-info-group {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex: 1;
+      min-width: 0;
+    }
+    .continue-thumb-box {
+      width: 58px;
+      height: 76px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #1e293b;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+    .continue-thumb-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .continue-details {
+      flex: 1;
+      min-width: 0;
+    }
+    .continue-tag {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--accent-cyan);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .continue-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 8px;
+    }
+    .continue-progress-wrapper {
+      max-width: 380px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .progress-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    .progress-page-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* Catalogue Toolbar */
+    .catalogue-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+      max-width: 440px;
+    }
+    .search-box input {
+      width: 100%;
+      background: #151d30;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 14px 10px 38px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .search-box input:focus {
+      border-color: var(--accent-blue);
+      background: #1c2742;
+    }
+    .search-box svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sort-select {
+      background: #151d30;
+      border: 1px solid var(--border-color);
+      color: #cbd5e1;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    .sort-select:focus {
+      border-color: var(--accent-blue);
+    }
+
+    /* Grid of Cards */
+    .catalogue-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 24px;
+    }
+
+    .book-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s, box-shadow 0.25s;
+      position: relative;
+    }
+    .book-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(59, 130, 246, 0.4);
+      box-shadow: var(--shadow-card);
+      background: var(--bg-card-hover);
+    }
+
+    .book-cover-container {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      background: #0f172a;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+    .book-cover-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+    .book-card:hover .book-cover-img {
+      transform: scale(1.03);
+    }
+
+    .fallback-cover {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      position: relative;
+    }
+    .fallback-cover-spine {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .fallback-cover-icon {
+      margin-bottom: 12px;
+      color: #3b82f6;
+    }
+    .fallback-cover-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .badge-status {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+    .badge-in-progress {
+      background: rgba(59, 130, 246, 0.85);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .badge-completed {
+      background: rgba(16, 185, 129, 0.85);
+      color: #ffffff;
+    }
+    .badge-unread {
+      background: rgba(15, 23, 42, 0.75);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(0, 0, 0, 0.4);
+    }
+    .card-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+    }
+
+    .book-body {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .book-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f8fafc;
+      margin-bottom: 6px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 38px;
+      cursor: pointer;
+    }
+    .book-title:hover {
+      color: #60a5fa;
+    }
+
+    .book-meta {
+      font-size: 12px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .book-actions {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .book-actions .btn {
+      flex: 1;
+    }
+
+    /* Reader View */
+    #view-reader {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #090c15;
+      z-index: 100;
+      flex-direction: column;
+    }
+
+    .reader-topbar {
+      height: 56px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      z-index: 110;
+    }
+
+    .reader-title-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 50%;
+      overflow: hidden;
+    }
+    .reader-doc-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reader-progress-pill {
+      font-size: 12px;
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .reader-controls-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .jump-page-input {
+      width: 50px;
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 4px 6px;
+      color: #fff;
+      font-size: 13px;
+      text-align: center;
+      outline: none;
+    }
+    .jump-page-input:focus {
+      border-color: var(--accent-blue);
+    }
+
+    /* Flipbook Stage */
+    #reader-stage {
+      position: relative;
+      flex: 1;
+      width: 100vw;
+      display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
     }
 
-    #stage {
-      position: relative;
-      width: 100vw;
-      height: 86vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
     #flipbook {
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+      transition: transform 0.2s ease;
     }
 
     .page {
@@ -49,65 +649,87 @@
       overflow: hidden;
     }
 
-    canvas {
+    .page canvas {
       width: 100%;
       height: 100%;
       display: block;
     }
 
-    #status-layer {
-      position: fixed;
-      inset: 0;
-      background: #111218;
+    /* Resume Reading Notification Toast */
+    #toast-resume {
+      position: absolute;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--accent-blue);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(59, 130, 246, 0.3);
+      border-radius: 30px;
+      padding: 8px 18px;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      padding: 24px;
-      transition: opacity 0.3s ease;
+      gap: 12px;
+      color: #fff;
+      font-size: 13px;
+      z-index: 120;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(8px);
+    }
+    #toast-resume.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .toast-resume-btn {
+      background: var(--accent-blue);
+      border: none;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .toast-resume-btn:hover {
+      background: #2563eb;
+    }
+    .toast-dismiss-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    .toast-dismiss-btn:hover {
+      color: #fff;
     }
 
-    .spinner {
-      width: 48px;
-      height: 48px;
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-top-color: #3b82f6;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 18px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    #status-msg {
-      font-size: 15px;
-      color: #94a3b8;
-      text-align: center;
-      max-width: 480px;
-      line-height: 1.6;
-    }
-
-    #dock {
+    /* Dock Controls */
+    #reader-dock {
       position: fixed;
       bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: rgba(24, 25, 36, 0.9);
-      padding: 8px 18px;
+      gap: 8px;
+      background: rgba(21, 29, 48, 0.92);
+      padding: 8px 16px;
       border-radius: 40px;
-      backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
-      z-index: 1000;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      z-index: 110;
     }
 
     .dock-btn {
-      background: #232534;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
       color: #f1f5f9;
       padding: 8px 14px;
       border-radius: 20px;
@@ -117,13 +739,12 @@
       transition: all 0.15s ease;
       display: flex;
       align-items: center;
+      gap: 6px;
     }
-
     .dock-btn:hover:not(:disabled) {
-      background: #3b82f6;
+      background: var(--accent-blue);
       color: #fff;
     }
-
     .dock-btn:disabled {
       opacity: 0.3;
       cursor: not-allowed;
@@ -134,13 +755,204 @@
       font-variant-numeric: tabular-nums;
       color: #cbd5e1;
       padding: 0 10px;
+      font-weight: 500;
     }
 
-    @media (max-width: 640px) {
-      #dock {
-        bottom: 14px;
+    /* Status & Loading Layer */
+    #status-layer {
+      position: fixed;
+      inset: 0;
+      background: #0b0f19;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 24px;
+      transition: opacity 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 18px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #status-msg {
+      font-size: 15px;
+      color: #94a3b8;
+      text-align: center;
+      max-width: 460px;
+      line-height: 1.6;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background: #151d30;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 580px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      animation: modalIn 0.2s ease-out;
+    }
+    @keyframes modalIn {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    .modal-close:hover {
+      color: #fff;
+    }
+    .modal-body {
+      padding: 24px;
+    }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background: #111827;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+    .form-input {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--accent-blue);
+    }
+    .form-hint {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    /* Folder Tabs */
+    .tab-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+      gap: 8px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+    }
+
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      header {
+        padding: 12px 16px;
+      }
+      .logo-badge {
+        display: none;
+      }
+      .folder-pill {
+        max-width: 160px;
+      }
+      main {
+        padding: 18px 16px 60px;
+      }
+      .hero-linker {
+        padding: 24px 18px;
+      }
+      .hero-title {
+        font-size: 22px;
+      }
+      .catalogue-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+      }
+      .continue-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .continue-actions {
+        width: 100%;
+      }
+      .continue-actions .btn {
+        width: 100%;
+      }
+      #reader-dock {
+        bottom: 12px;
         padding: 6px 12px;
-        gap: 6px;
+        gap: 4px;
       }
       .dock-btn {
         padding: 6px 10px;
@@ -151,49 +963,497 @@
 </head>
 <body>
 
+  <!-- Loading / Status Layer -->
   <div id="status-layer">
     <div class="spinner" id="spinner"></div>
-    <div id="status-msg">Initializing flipbook engine...</div>
+    <div id="status-msg">Initializing FlipDrive...</div>
   </div>
 
-  <div id="stage">
-    <div id="flipbook"></div>
+  <!-- Header -->
+  <header>
+    <div class="logo-container" id="nav-brand" title="FlipDrive Home">
+      <div class="logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </div>
+      <span class="logo-text">FlipDrive</span>
+      <span class="logo-badge">Drive Linker</span>
+    </div>
+
+    <div class="header-center">
+      <div class="folder-pill" id="btn-active-folder" title="Click to change or authorize folder">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span class="folder-pill-name" id="hdr-folder-name">Select Google Drive Folder</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" id="btn-open-linker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        Link Folder
+      </button>
+
+      <button class="btn btn-ghost btn-sm" id="btn-open-settings" title="Configuration & Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View: PDF Catalogue -->
+  <main id="view-catalogue">
+    <!-- Hero Linker prompt shown when no folder is loaded -->
+    <div class="hero-linker" id="hero-linker-box">
+      <h1 class="hero-title">Connect your Google Drive PDF Library</h1>
+      <p class="hero-subtitle">
+        Select any Google Drive folder to instantly generate an interactive publication catalogue with live thumbnails, seamless 3D page-flip reading, and automatic progress bookmarking.
+      </p>
+      <div class="hero-buttons">
+        <button class="btn btn-primary" id="hero-btn-picker">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          Select Google Drive Folder
+        </button>
+        <button class="btn btn-secondary" id="hero-btn-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          Paste Folder Link
+        </button>
+        <button class="btn btn-ghost" id="hero-btn-demo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          Explore Sample Library
+        </button>
+      </div>
+    </div>
+
+    <!-- Shelf: Continue Reading -->
+    <div class="shelf-container" id="shelf-continue" style="display: none;">
+      <h2 class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Continue Reading
+      </h2>
+      <div id="continue-card-wrapper"></div>
+    </div>
+
+    <!-- Catalogue Header & Toolbar -->
+    <div class="catalogue-toolbar">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="catalogue-search" placeholder="Search publications by title...">
+      </div>
+
+      <div class="toolbar-actions">
+        <select class="sort-select" id="catalogue-sort">
+          <option value="recent">Recently Read</option>
+          <option value="name-asc">Name (A → Z)</option>
+          <option value="name-desc">Name (Z → A)</option>
+          <option value="date-desc">Newest First</option>
+          <option value="size-desc">File Size (Largest)</option>
+        </select>
+
+        <button class="btn btn-secondary btn-sm" id="btn-refresh-folder" title="Refresh files from Drive">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Publications Grid -->
+    <div class="catalogue-grid" id="grid-catalogue"></div>
+  </main>
+
+  <!-- Reader View: Interactive 3D Flipbook -->
+  <div id="view-reader">
+    <!-- Reader Top Bar -->
+    <div class="reader-topbar">
+      <button class="btn btn-secondary btn-sm" id="btn-back-to-catalogue">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
+        </svg>
+        Back to Catalogue
+      </button>
+
+      <div class="reader-title-box">
+        <span class="reader-doc-name" id="reader-title">Loading Publication...</span>
+        <span class="reader-progress-pill" id="reader-progress-indicator">Page 1 / -</span>
+      </div>
+
+      <div class="reader-controls-right">
+        <span style="font-size:12px; color:var(--text-muted)">Jump to:</span>
+        <input type="number" id="reader-jump-input" class="jump-page-input" min="1" value="1" title="Type page number and press Enter">
+        <button class="btn btn-ghost btn-sm" id="btn-share-reader" title="Copy link to current page">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Resume Reading Toast Notification -->
+    <div id="toast-resume">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      <span id="toast-resume-text">Resumed reading at page 1</span>
+      <button class="toast-resume-btn" id="btn-toast-restart">Restart from Page 1</button>
+      <button class="toast-dismiss-btn" id="btn-toast-dismiss" title="Dismiss">&times;</button>
+    </div>
+
+    <!-- Flipbook Stage -->
+    <div id="reader-stage">
+      <div id="flipbook"></div>
+    </div>
+
+    <!-- Bottom Dock Controls -->
+    <div id="reader-dock">
+      <button class="dock-btn" id="btn-first" title="First Page">&laquo;</button>
+      <button class="dock-btn" id="btn-prev" title="Previous Page">&lsaquo; Prev</button>
+      <div id="page-indicator"><span id="lbl-curr">1</span> / <span id="lbl-total">-</span></div>
+      <button class="dock-btn" id="btn-next" title="Next Page">Next &rsaquo;</button>
+      <button class="dock-btn" id="btn-last" title="Last Page">&raquo;</button>
+      <button class="dock-btn" id="btn-fullscreen" title="Toggle Fullscreen">&#x26F6;</button>
+    </div>
   </div>
 
-  <div id="dock">
-    <button class="dock-btn" id="btn-first" title="First Page">&laquo;</button>
-    <button class="dock-btn" id="btn-prev" title="Previous Page">&lsaquo; Prev</button>
-    <div id="page-indicator"><span id="lbl-curr">1</span> / <span id="lbl-total">-</span></div>
-    <button class="dock-btn" id="btn-next" title="Next Page">Next &rsaquo;</button>
-    <button class="dock-btn" id="btn-last" title="Last Page">&raquo;</button>
-    <button class="dock-btn" id="btn-fullscreen" title="Toggle Fullscreen">&#x26F6;</button>
+  <!-- Folder Linker Modal -->
+  <div class="modal-backdrop" id="modal-folder-picker">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Link Google Drive Folder</h3>
+        <button class="modal-close" id="btn-close-linker-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="tab-nav">
+          <button class="tab-btn active" data-tab="tab-link-input">Folder Link / ID</button>
+          <button class="tab-btn" data-tab="tab-oauth-picker">Google OAuth &amp; Picker</button>
+          <button class="tab-btn" data-tab="tab-demo">Demo Samples</button>
+        </div>
+
+        <!-- Tab 1: Folder Link or ID -->
+        <div class="tab-pane active" id="tab-link-input">
+          <div class="form-group">
+            <label class="form-label">Google Drive Folder URL or Folder ID</label>
+            <input type="text" class="form-input" id="input-folder-url" placeholder="https://drive.google.com/drive/folders/1w7nE72Jk... or 1w7n...">
+            <div class="form-hint">
+              Paste the shareable link of any Google Drive folder containing your PDF files. Make sure the folder sharing is set to <strong>"Anyone with the link can view"</strong>.
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width: 100%;" id="btn-submit-folder-url">Fetch PDF Catalogue</button>
+        </div>
+
+        <!-- Tab 2: OAuth 2.0 & Native Picker -->
+        <div class="tab-pane" id="tab-oauth-picker">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+            Authorize direct, secure read access to your Google Drive and select any folder interactively via Google's native Folder Picker dialog.
+          </p>
+          <div id="oauth-status-box" style="margin-bottom:16px; font-size:13px; color:#cbd5e1;"></div>
+          <div style="display:flex; gap:10px; flex-direction:column;">
+            <button class="btn btn-primary" id="btn-authorize-google">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+              Sign In &amp; Select Folder via Drive Picker
+            </button>
+            <div class="form-hint">
+              Requires a Google Cloud OAuth Client ID (configurable in Settings).
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Demo Library -->
+        <div class="tab-pane" id="tab-demo">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+            Want to test FlipDrive immediately? Load our curated sample library featuring public domain publications, complete with 3D flipbook reading and bookmarking.
+          </p>
+          <button class="btn btn-primary" style="width: 100%;" id="btn-load-demo-library">Load Demo Library</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop" id="modal-settings">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">FlipDrive Settings</h3>
+        <button class="modal-close" id="btn-close-settings-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Google Apps Script Bridge URL</label>
+          <input type="text" class="form-input" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+          <div class="form-hint">
+            The private Google Apps Script deployment URL used to list folders and bypass CORS restrictions.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Google Cloud OAuth Client ID (Optional)</label>
+          <input type="text" class="form-input" id="cfg-client-id" placeholder="xxxx.apps.googleusercontent.com">
+          <div class="form-hint">
+            Used for Google Identity Services (GIS) Sign-In and native Google Picker integration.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Google API / Developer Key (Optional)</label>
+          <input type="text" class="form-input" id="cfg-api-key" placeholder="AIzaSy...">
+          <div class="form-hint">
+            Used by Google Picker API for enhanced folder dialog browsing.
+          </div>
+        </div>
+
+        <div class="form-group" style="padding-top: 10px; border-top: 1px solid var(--border-color);">
+          <label class="form-label">Reading Progress &amp; History</label>
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:13px; color:var(--text-muted)" id="cfg-history-count">0 publications tracked</span>
+            <button class="btn btn-secondary btn-sm" id="btn-clear-history">Clear History</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+      </div>
+    </div>
   </div>
 
   <script>
+    // ==========================================
+    // FLIPDRIVE CONSTANTS & CONFIGURATION
+    // ==========================================
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    // OPTIONAL: Paste your deployed Google Apps Script URL here so you don't have to specify it in URL query strings!
-    const DEFAULT_GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzadHLrOFoiZfPf0GiWK8zIIt5yEiN7kPIgoMBM1Yl267ApwX0k74RlH2DMvzv7n9Lg/exec"; 
+    const STORAGE_KEY_PROGRESS = 'flipdrive_reading_progress';
+    const STORAGE_KEY_FOLDER = 'flipdrive_active_folder';
+    const STORAGE_KEY_CONFIG = 'flipdrive_app_config';
 
-    const params = new URLSearchParams(window.location.search);
-    const fileId = params.get('id');
-    const directPdf = params.get('pdf');
-    const gasEndpoint = params.get('gas') || DEFAULT_GAS_ENDPOINT;
+    const DEFAULT_GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzadHLrOFoiZfPf0GiWK8zIIt5yEiN7kPIgoMBM1Yl267ApwX0k74RlH2DMvzv7n9Lg/exec";
 
+    // Demo publications for zero-friction testing
+    const DEMO_PUBLICATIONS = [
+      {
+        id: "demo-pdf-1",
+        name: "Trace: Design Systems & Architecture Magazine.pdf",
+        sizeBytes: 1540000,
+        updatedAt: new Date().toISOString(),
+        thumbnailLink: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80",
+        directUrl: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf"
+      },
+      {
+        id: "demo-pdf-2",
+        name: "Horizon: Science & Modern Astrophysics.pdf",
+        sizeBytes: 2840000,
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+        thumbnailLink: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=400&q=80",
+        directUrl: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf"
+      },
+      {
+        id: "demo-pdf-3",
+        name: "Monochrome: Photography & Typography Annual.pdf",
+        sizeBytes: 3120000,
+        updatedAt: new Date(Date.now() - 172800000).toISOString(),
+        thumbnailLink: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80",
+        directUrl: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf"
+      }
+    ];
+
+    // ==========================================
+    // APPLICATION STATE
+    // ==========================================
+    let appConfig = loadAppConfig();
+    let currentFolder = null;
+    let folderFiles = [];
+    let currentReadingDoc = null;
+    let activePdfInstance = null;
+    let renderedPageSet = new Set();
+    let toastTimeout = null;
+
+    // Google API / OAuth State
+    let googleAccessToken = null;
+    let pickerApiLoaded = false;
+    let gisTokenClient = null;
+
+    // ==========================================
+    // LOCAL STORAGE & CONFIG HELPERS
+    // ==========================================
+    function loadAppConfig() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_CONFIG);
+        return stored ? JSON.parse(stored) : {
+          gasEndpoint: DEFAULT_GAS_ENDPOINT,
+          clientId: '',
+          apiKey: ''
+        };
+      } catch (e) {
+        return { gasEndpoint: DEFAULT_GAS_ENDPOINT, clientId: '', apiKey: '' };
+      }
+    }
+
+    function saveAppConfig(newCfg) {
+      appConfig = { ...appConfig, ...newCfg };
+      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(appConfig));
+    }
+
+    function getAllReadingProgress() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY_PROGRESS);
+        return data ? JSON.parse(data) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function getReadingProgress(fileId) {
+      if (!fileId) return null;
+      const all = getAllReadingProgress();
+      return all[fileId] || null;
+    }
+
+    function saveReadingProgress(fileId, fileName, currentPage, totalPages) {
+      if (!fileId || !currentPage) return;
+      try {
+        const all = getAllReadingProgress();
+        const percent = totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0;
+        all[fileId] = {
+          fileId: fileId,
+          fileName: fileName || (all[fileId] ? all[fileId].fileName : 'Untitled Publication'),
+          currentPage: currentPage,
+          totalPages: totalPages || (all[fileId] ? all[fileId].totalPages : 1),
+          percent: percent,
+          updatedAt: Date.now()
+        };
+        localStorage.setItem(STORAGE_KEY_PROGRESS, JSON.stringify(all));
+        updateHistoryCountDisplay();
+      } catch (e) {
+        console.warn("Unable to save reading progress:", e);
+      }
+    }
+
+    function clearReadingHistory() {
+      localStorage.removeItem(STORAGE_KEY_PROGRESS);
+      updateHistoryCountDisplay();
+      renderContinueShelf();
+      renderCatalogueGrid(folderFiles);
+    }
+
+    function updateHistoryCountDisplay() {
+      const all = getAllReadingProgress();
+      const count = Object.keys(all).length;
+      $('#cfg-history-count').text(`${count} publication${count === 1 ? '' : 's'} tracked`);
+    }
+
+    // ==========================================
+    // UI NOTIFICATIONS & HELPERS
+    // ==========================================
     const statusLayer = document.getElementById('status-layer');
     const statusMsg = document.getElementById('status-msg');
     const spinner = document.getElementById('spinner');
 
-    function showError(html) {
-      spinner.style.display = 'none';
-      statusMsg.innerHTML = html;
+    function showStatus(text) {
+      statusLayer.style.display = 'flex';
+      statusLayer.style.opacity = '1';
+      spinner.style.display = 'block';
+      statusMsg.innerHTML = text;
     }
 
-    function getViewportSize() {
-      const isMobile = window.innerWidth <= 768;
-      const w = isMobile ? window.innerWidth * 0.94 : Math.min(window.innerWidth * 0.9, 1100);
-      const h = isMobile ? window.innerHeight * 0.78 : Math.min(window.innerHeight * 0.82, 740);
-      return { width: Math.round(w), height: Math.round(h), isMobile };
+    function hideStatus() {
+      statusLayer.style.opacity = '0';
+      setTimeout(() => {
+        statusLayer.style.display = 'none';
+      }, 250);
+    }
+
+    function showErrorStatus(html) {
+      statusLayer.style.display = 'flex';
+      statusLayer.style.opacity = '1';
+      spinner.style.display = 'none';
+      statusMsg.innerHTML = `
+        <div style="color: #ef4444; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Operation Error</div>
+        <div>${html}</div>
+        <div style="margin-top: 20px;">
+          <button class="btn btn-secondary btn-sm" onclick="hideStatus()">Dismiss</button>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeJs(str) {
+      if (!str) return '';
+      return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || isNaN(bytes)) return '';
+      const b = parseInt(bytes, 10);
+      if (b === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(b) / Math.log(k));
+      return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function formatRelativeTime(timestamp) {
+      if (!timestamp) return '';
+      const diff = Date.now() - timestamp;
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'Just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs}h ago`;
+      const days = Math.floor(hrs / 24);
+      if (days < 30) return `${days}d ago`;
+      return new Date(timestamp).toLocaleDateString();
+    }
+
+    function extractFolderId(input) {
+      if (!input) return null;
+      input = input.trim();
+      const match = input.match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (match) return match[1];
+      if (/^[a-zA-Z0-9_-]{15,65}$/.test(input)) {
+        return input;
+      }
+      return null;
     }
 
     function base64ToUint8Array(base64) {
@@ -205,38 +1465,292 @@
       return uint8;
     }
 
-    async function loadPdfDocument() {
-      // 1. Direct PDF URL
-      if (directPdf) {
-        statusMsg.textContent = 'Loading direct PDF stream...';
-        return await pdfjsLib.getDocument({ url: directPdf }).promise;
-      }
+    // ==========================================
+    // GOOGLE DRIVE LINKER & FETCHER
+    // ==========================================
+    async function loadFolderCatalogue(folderId, folderName = null) {
+      showStatus('Fetching publications from Google Drive folder...');
+      try {
+        const gasUrl = appConfig.gasEndpoint || DEFAULT_GAS_ENDPOINT;
+        const targetUrl = `${gasUrl}?action=list&folderId=${encodeURIComponent(folderId)}`;
 
-      if (!fileId) {
-        throw new Error("No publication ID provided. Add <code>?id=YOUR_FILE_ID</code> to the URL.");
-      }
-
-      // 2. High-speed Google Apps Script Bridge
-      if (gasEndpoint) {
-        statusMsg.textContent = 'Fetching document via Google Apps Script bridge...';
-        const targetUrl = `${gasEndpoint}?id=${fileId}`;
         const resp = await fetch(targetUrl);
         const data = await resp.json();
 
         if (data.status === 'error') {
-          throw new Error(data.message || "Apps Script failed to retrieve file.");
+          throw new Error(data.message || 'Failed to retrieve folder contents.');
         }
 
-        if (data.name) {
-          document.title = `${data.name} | FlipDrive`;
+        const name = folderName || data.folderName || 'Google Drive Folder';
+        const files = data.files || [];
+
+        currentFolder = { id: folderId, name: name, count: files.length };
+        folderFiles = files;
+
+        // Persist active folder
+        localStorage.setItem(STORAGE_KEY_FOLDER, JSON.stringify(currentFolder));
+        updateHeaderFolderDisplay(name, files.length);
+
+        renderContinueShelf();
+        renderCatalogueGrid(folderFiles);
+
+        $('#hero-linker-box').hide();
+        hideStatus();
+
+      } catch (err) {
+        showErrorStatus(`
+          <strong>Could not load Google Drive folder</strong><br><br>
+          ${escapeHtml(err.message)}<br><br>
+          <span style="font-size: 13px; color: #cbd5e1;">
+            Ensure the folder sharing permission is set to <strong>"Anyone with the link can view"</strong>, 
+            and your Google Apps Script Web App is deployed with access set to <strong>"Anyone"</strong>.
+          </span>
+        `);
+      }
+    }
+
+    function loadDemoLibrary() {
+      currentFolder = { id: 'demo-library', name: 'FlipDrive Demo Collection', count: DEMO_PUBLICATIONS.length };
+      folderFiles = [...DEMO_PUBLICATIONS];
+      localStorage.setItem(STORAGE_KEY_FOLDER, JSON.stringify(currentFolder));
+      updateHeaderFolderDisplay(currentFolder.name, folderFiles.length);
+
+      renderContinueShelf();
+      renderCatalogueGrid(folderFiles);
+      $('#hero-linker-box').hide();
+      closeModals();
+    }
+
+    function updateHeaderFolderDisplay(name, count) {
+      $('#hdr-folder-name').text(`${name} (${count})`);
+      $('#hdr-folder-name').attr('title', `${name} - ${count} publications`);
+    }
+
+    // ==========================================
+    // CATALOGUE RENDERING
+    // ==========================================
+    function renderContinueShelf() {
+      const allProgress = getAllReadingProgress();
+      const entries = Object.values(allProgress)
+        .filter(item => item && item.currentPage > 1)
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+      if (entries.length === 0) {
+        $('#shelf-continue').hide();
+        return;
+      }
+
+      const topItem = entries[0];
+      const percent = topItem.percent || (topItem.totalPages ? Math.round((topItem.currentPage / topItem.totalPages) * 100) : 0);
+      const matchingFile = folderFiles.find(f => f.id === topItem.fileId);
+      const thumbUrl = matchingFile && matchingFile.thumbnailLink 
+        ? matchingFile.thumbnailLink 
+        : `https://drive.google.com/thumbnail?id=${topItem.fileId}&sz=w400`;
+
+      const html = `
+        <div class="continue-card">
+          <div class="continue-info-group">
+            <div class="continue-thumb-box">
+              <img src="${thumbUrl}" alt="Cover" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'58\\' height=\\'76\\' viewBox=\\'0 0 58 76\\' fill=\\'%231e293b\\'><rect width=\\'58\\' height=\\'76\\' fill=\\'%231e293b\\'/><text x=\\'29\\' y=\\'42\\' font-size=\\'18\\' fill=\\'%233b82f6\\' text-anchor=\\'middle\\'>PDF</text></svg>'">
+            </div>
+            <div class="continue-details">
+              <div class="continue-tag">Jump back in • ${formatRelativeTime(topItem.updatedAt)}</div>
+              <div class="continue-title" title="${escapeHtml(topItem.fileName)}">${escapeHtml(topItem.fileName)}</div>
+              <div class="continue-progress-wrapper">
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+                </div>
+                <span class="progress-page-text">Page ${topItem.currentPage} of ${topItem.totalPages} (${percent}%)</span>
+              </div>
+            </div>
+          </div>
+          <div class="continue-actions">
+            <button class="btn btn-primary" onclick="openReader('${topItem.fileId}', '${escapeJs(topItem.fileName)}', ${topItem.currentPage})">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              Resume Reading (p. ${topItem.currentPage})
+            </button>
+          </div>
+        </div>
+      `;
+
+      $('#continue-card-wrapper').html(html);
+      $('#shelf-continue').show();
+    }
+
+    function renderCatalogueGrid(files) {
+      const container = $('#grid-catalogue');
+      container.empty();
+
+      if (!files || files.length === 0) {
+        container.html(`
+          <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-muted);">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 12px; opacity: 0.6;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <p style="font-size: 16px; font-weight: 500; color: #e2e8f0; margin-bottom: 6px;">No PDF publications found</p>
+            <p style="font-size: 13px;">This Google Drive folder does not have any PDF files or matching search results.</p>
+          </div>
+        `);
+        return;
+      }
+
+      files.forEach(file => {
+        const progress = getReadingProgress(file.id);
+        const hasProgress = progress && progress.currentPage > 1;
+        const isCompleted = progress && progress.currentPage >= progress.totalPages && progress.totalPages > 1;
+        const percent = hasProgress ? (progress.percent || Math.round((progress.currentPage / progress.totalPages) * 100)) : 0;
+
+        let badgeHtml = '<span class="badge-status badge-unread">Unread</span>';
+        let progressBarHtml = '';
+
+        if (isCompleted) {
+          badgeHtml = '<span class="badge-status badge-completed">Completed ✓</span>';
+          progressBarHtml = '<div class="card-progress-bar"><div class="card-progress-fill" style="width: 100%;"></div></div>';
+        } else if (hasProgress) {
+          badgeHtml = `<span class="badge-status badge-in-progress">p. ${progress.currentPage} / ${progress.totalPages}</span>`;
+          progressBarHtml = `<div class="card-progress-bar"><div class="card-progress-fill" style="width: ${percent}%;"></div></div>`;
         }
 
-        statusMsg.textContent = 'Decompressing document bytes...';
+        const thumbSrc = file.thumbnailLink || `https://drive.google.com/thumbnail?id=${file.id}&sz=w400`;
+        const sizeText = file.sizeBytes ? formatBytes(file.sizeBytes) : 'PDF Document';
+        const dateText = file.updatedAt ? new Date(file.updatedAt).toLocaleDateString() : '';
+
+        const card = $(`
+          <div class="book-card" data-id="${file.id}">
+            <div class="book-cover-container" onclick="openReader('${file.id}', '${escapeJs(file.name)}', ${hasProgress ? progress.currentPage : 1})">
+              <img class="book-cover-img" src="${thumbSrc}" alt="${escapeHtml(file.name)}" loading="lazy" 
+                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <div class="fallback-cover" style="display: none;">
+                <div class="fallback-cover-spine"></div>
+                <div class="fallback-cover-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  </svg>
+                </div>
+                <div class="fallback-cover-title">${escapeHtml(file.name)}</div>
+              </div>
+              ${badgeHtml}
+              ${progressBarHtml}
+            </div>
+
+            <div class="book-body">
+              <h3 class="book-title" title="${escapeHtml(file.name)}" onclick="openReader('${file.id}', '${escapeJs(file.name)}', ${hasProgress ? progress.currentPage : 1})">
+                ${escapeHtml(file.name)}
+              </h3>
+              <div class="book-meta">
+                <span>${sizeText}</span>
+                <span>${dateText}</span>
+              </div>
+              <div class="book-actions">
+                ${hasProgress ? `
+                  <button class="btn btn-primary btn-sm" onclick="openReader('${file.id}', '${escapeJs(file.name)}', ${progress.currentPage})">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    Resume (p. ${progress.currentPage})
+                  </button>
+                  <button class="btn btn-secondary btn-sm" title="Start from Page 1" onclick="openReader('${file.id}', '${escapeJs(file.name)}', 1)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                  </button>
+                ` : `
+                  <button class="btn btn-primary btn-sm" onclick="openReader('${file.id}', '${escapeJs(file.name)}', 1)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    Read
+                  </button>
+                `}
+              </div>
+            </div>
+          </div>
+        `);
+
+        container.append(card);
+      });
+    }
+
+    // ==========================================
+    // SEARCH & SORT LOGIC
+    // ==========================================
+    function filterAndSortFiles() {
+      const query = ($('#catalogue-search').val() || '').toLowerCase().trim();
+      const sortBy = $('#catalogue-sort').val();
+
+      let filtered = folderFiles.filter(f => f.name.toLowerCase().includes(query));
+
+      const allProgress = getAllReadingProgress();
+
+      filtered.sort((a, b) => {
+        if (sortBy === 'recent') {
+          const progA = allProgress[a.id]?.updatedAt || 0;
+          const progB = allProgress[b.id]?.updatedAt || 0;
+          return progB - progA;
+        }
+        if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+        if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
+        if (sortBy === 'date-desc') return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+        if (sortBy === 'size-desc') return (b.sizeBytes || 0) - (a.sizeBytes || 0);
+        return 0;
+      });
+
+      renderCatalogueGrid(filtered);
+    }
+
+    $('#catalogue-search').on('input', filterAndSortFiles);
+    $('#catalogue-sort').on('change', filterAndSortFiles);
+
+    // ==========================================
+    // 3D FLIPBOOK READER & SMART RESUME
+    // ==========================================
+    function getViewportSize() {
+      const isMobile = window.innerWidth <= 768;
+      const w = isMobile ? window.innerWidth * 0.94 : Math.min(window.innerWidth * 0.88, 1150);
+      const h = isMobile ? window.innerHeight * 0.78 : Math.min(window.innerHeight * 0.82, 760);
+      return { width: Math.round(w), height: Math.round(h), isMobile };
+    }
+
+    async function fetchPdfDocument(fileId, fileMeta = null) {
+      // 1. Direct URL (e.g. demo files)
+      if (fileMeta && fileMeta.directUrl) {
+        showStatus('Loading sample PDF stream...');
+        return await pdfjsLib.getDocument({ url: fileMeta.directUrl }).promise;
+      }
+
+      // 2. Google OAuth Bearer Token fetch (if user authorized via GIS)
+      if (googleAccessToken) {
+        try {
+          showStatus('Fetching via authorized Google Drive API...');
+          const driveUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+          const resp = await fetch(driveUrl, {
+            headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+          });
+          if (resp.ok) {
+            const buf = await resp.arrayBuffer();
+            return await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+          }
+        } catch (authErr) {
+          console.warn("OAuth fetch failed, trying GAS bridge:", authErr);
+        }
+      }
+
+      // 3. Google Apps Script Bridge
+      const gasUrl = appConfig.gasEndpoint || DEFAULT_GAS_ENDPOINT;
+      if (gasUrl) {
+        showStatus('Streaming document via Google Apps Script bridge...');
+        const targetUrl = `${gasUrl}?id=${fileId}`;
+        const resp = await fetch(targetUrl);
+        const data = await resp.json();
+
+        if (data.status === 'error') {
+          throw new Error(data.message || 'Apps Script bridge failed to fetch file.');
+        }
+
+        showStatus('Unpacking document bytes...');
         const pdfBytes = base64ToUint8Array(data.base64);
         return await pdfjsLib.getDocument({ data: pdfBytes }).promise;
       }
 
-      // 3. Fallback: Proxy pipeline if GAS endpoint is not configured yet
+      // 4. Proxy Pipeline Fallback
       const rawUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
       const proxies = [
         `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rawUrl)}`,
@@ -245,8 +1759,8 @@
 
       for (let i = 0; i < proxies.length; i++) {
         try {
-          statusMsg.textContent = `Attempting stream fetch (proxy ${i + 1}/${proxies.length})...`;
-          const loadingTask = pdfjsLib.getDocument({ url: proxies[i], withCredentials: false });
+          showStatus(`Attempting proxy stream (${i + 1}/${proxies.length})...`);
+          const loadingTask = pdfjsLib.getDocument({ url: proxies[i] });
           const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 7000));
           return await Promise.race([loadingTask.promise, timeoutPromise]);
         } catch (e) {
@@ -254,27 +1768,46 @@
         }
       }
 
-      throw new Error("Drive binary stream was blocked. Please configure the Apps Script Bridge.");
+      throw new Error("Unable to stream PDF from Google Drive. Please verify sharing permissions and Apps Script endpoint.");
     }
 
-    async function init() {
+    async function openReader(fileId, fileName, resumePage = 1) {
       try {
-        const pdf = await loadPdfDocument();
-        const totalPages = pdf.numPages;
-        document.getElementById('lbl-total').textContent = totalPages;
+        $('#view-catalogue').hide();
+        $('#view-reader').css('display', 'flex');
+        $('#reader-title').text(fileName || 'Reading Publication');
+        showStatus(`Opening ${fileName || 'publication'}...`);
 
-        statusMsg.textContent = 'Generating page textures...';
+        currentReadingDoc = { id: fileId, name: fileName };
+        renderedPageSet.clear();
+
+        // Find file metadata from catalogue
+        const fileMeta = folderFiles.find(f => f.id === fileId);
+
+        // Load document
+        const pdf = await fetchPdfDocument(fileId, fileMeta);
+        activePdfInstance = pdf;
+        const totalPages = pdf.numPages;
+
+        document.getElementById('lbl-total').textContent = totalPages;
+        $('#reader-jump-input').attr('max', totalPages);
+
+        // Reset flipbook DOM
+        $('#flipbook').turn('destroy');
+        $('#flipbook').empty();
+
+        showStatus('Constructing 3D publication...');
         const { width, height, isMobile } = getViewportSize();
 
+        // Create page placeholders
         for (let i = 1; i <= totalPages; i++) {
           const pageDiv = $('<div />', { class: 'page', id: `page-${i}` });
           const canvas = $('<canvas />')[0];
           pageDiv.append(canvas);
           $('#flipbook').append(pageDiv);
-
-          renderCanvas(pdf, i, canvas);
         }
 
+        // Initialize Turn.js
         $('#flipbook').turn({
           width: width,
           height: height,
@@ -285,28 +1818,67 @@
           gradients: true,
           when: {
             turned: function(e, page) {
-              document.getElementById('lbl-curr').textContent = page;
-              updateControls(page, totalPages);
+              handlePageTurned(page, totalPages);
             }
           }
         });
 
-        statusLayer.style.opacity = '0';
-        setTimeout(() => statusLayer.style.display = 'none', 300);
+        // Determine starting page & resume logic
+        const savedProgress = getReadingProgress(fileId);
+        let targetPage = resumePage;
+        if (!targetPage || targetPage < 1) {
+          targetPage = (savedProgress && savedProgress.currentPage) ? savedProgress.currentPage : 1;
+        }
+        if (targetPage > totalPages) targetPage = totalPages;
 
-        bindEvents(totalPages);
+        // Render current & neighbor pages
+        renderPageNeighbors(pdf, targetPage, totalPages);
+
+        if (targetPage > 1) {
+          $('#flipbook').turn('page', targetPage);
+          showResumeToast(targetPage);
+        } else {
+          handlePageTurned(1, totalPages);
+        }
+
+        bindReaderControls(totalPages);
+        hideStatus();
+
+        // Update URL query
+        updateBrowserUrl(fileId, targetPage);
 
       } catch (err) {
-        showError(
-          `<strong>Publication Load Error</strong><br><br>${err.message}<br><br>` +
-          `<span style="font-size:13px; color:#cbd5e1;">Tip: Deploy the Apps Script bridge script and pass <code>&gas=YOUR_URL</code> or set <code>DEFAULT_GAS_ENDPOINT</code> in index.html.</span>`
-        );
+        showErrorStatus(`
+          <strong>Unable to load publication</strong><br><br>
+          ${escapeHtml(err.message)}<br><br>
+          <span style="font-size: 13px; color: #cbd5e1;">Check sharing permissions on Google Drive or verify your Apps Script Bridge.</span>
+        `);
       }
     }
 
-    async function renderCanvas(pdf, pageNum, canvas) {
+    async function renderPageNeighbors(pdf, pageNum, totalPages) {
+      const pagesToRender = [pageNum];
+      if (pageNum > 1) pagesToRender.push(pageNum - 1);
+      if (pageNum < totalPages) pagesToRender.push(pageNum + 1);
+      if (pageNum + 2 <= totalPages) pagesToRender.push(pageNum + 2);
+      if (pageNum - 2 >= 1) pagesToRender.push(pageNum - 2);
+
+      for (const p of pagesToRender) {
+        if (!renderedPageSet.has(p)) {
+          renderCanvasPage(pdf, p);
+        }
+      }
+    }
+
+    async function renderCanvasPage(pdf, pageNum) {
+      if (renderedPageSet.has(pageNum)) return;
+      renderedPageSet.add(pageNum);
+
       try {
         const page = await pdf.getPage(pageNum);
+        const canvas = $(`#page-${pageNum} canvas`)[0];
+        if (!canvas) return;
+
         const viewport = page.getViewport({ scale: 1.8 });
         canvas.height = viewport.height;
         canvas.width = viewport.width;
@@ -318,25 +1890,79 @@
       }
     }
 
-    function updateControls(page, total) {
+    function handlePageTurned(page, totalPages) {
+      document.getElementById('lbl-curr').textContent = page;
+      $('#reader-jump-input').val(page);
+
+      const percent = totalPages > 0 ? Math.round((page / totalPages) * 100) : 0;
+      $('#reader-progress-indicator').text(`Page ${page} of ${totalPages} (${percent}%)`);
+
+      updateDockControls(page, totalPages);
+
+      // Lazily render adjacent pages for smooth flips
+      if (activePdfInstance) {
+        renderPageNeighbors(activePdfInstance, page, totalPages);
+      }
+
+      // Persist reading progress
+      if (currentReadingDoc) {
+        saveReadingProgress(currentReadingDoc.id, currentReadingDoc.name, page, totalPages);
+      }
+
+      updateBrowserUrl(currentReadingDoc?.id, page);
+    }
+
+    function showResumeToast(page) {
+      const toast = $('#toast-resume');
+      $('#toast-resume-text').text(`Resumed reading at page ${page}`);
+      toast.addClass('show');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.removeClass('show');
+      }, 7000);
+    }
+
+    $('#btn-toast-restart').on('click', () => {
+      $('#flipbook').turn('page', 1);
+      $('#toast-resume').removeClass('show');
+    });
+
+    $('#btn-toast-dismiss').on('click', () => {
+      $('#toast-resume').removeClass('show');
+    });
+
+    function updateDockControls(page, total) {
       document.getElementById('btn-prev').disabled = (page <= 1);
       document.getElementById('btn-first').disabled = (page <= 1);
       document.getElementById('btn-next').disabled = (page >= total);
       document.getElementById('btn-last').disabled = (page >= total);
     }
 
-    function bindEvents(totalPages) {
-      $('#btn-prev').on('click', () => $('#flipbook').turn('previous'));
-      $('#btn-next').on('click', () => $('#flipbook').turn('next'));
-      $('#btn-first').on('click', () => $('#flipbook').turn('page', 1));
-      $('#btn-last').on('click', () => $('#flipbook').turn('page', totalPages));
+    function bindReaderControls(totalPages) {
+      $('#btn-prev').off('click').on('click', () => $('#flipbook').turn('previous'));
+      $('#btn-next').off('click').on('click', () => $('#flipbook').turn('next'));
+      $('#btn-first').off('click').on('click', () => $('#flipbook').turn('page', 1));
+      $('#btn-last').off('click').on('click', () => $('#flipbook').turn('page', totalPages));
 
-      $(document).on('keydown', (e) => {
-        if (e.key === 'ArrowRight' || e.key === 'PageDown') $('#flipbook').turn('next');
-        if (e.key === 'ArrowLeft' || e.key === 'PageUp') $('#flipbook').turn('previous');
+      $('#reader-jump-input').off('keydown').on('keydown', function(e) {
+        if (e.key === 'Enter') {
+          const val = parseInt($(this).val(), 10);
+          if (val >= 1 && val <= totalPages) {
+            $('#flipbook').turn('page', val);
+          }
+        }
       });
 
-      $('#btn-fullscreen').on('click', () => {
+      $(document).off('keydown.reader').on('keydown.reader', (e) => {
+        if ($('#view-reader').is(':visible') && !$(e.target).is('input')) {
+          if (e.key === 'ArrowRight' || e.key === 'PageDown') $('#flipbook').turn('next');
+          if (e.key === 'ArrowLeft' || e.key === 'PageUp') $('#flipbook').turn('previous');
+          if (e.key === 'Escape') exitReader();
+        }
+      });
+
+      $('#btn-fullscreen').off('click').on('click', () => {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(() => {});
         } else {
@@ -344,14 +1970,278 @@
         }
       });
 
-      window.addEventListener('resize', () => {
-        const dims = getViewportSize();
-        $('#flipbook').turn('display', dims.isMobile ? 'single' : 'double');
-        $('#flipbook').turn('size', dims.width, dims.height);
+      $('#btn-share-reader').off('click').on('click', () => {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+          alert('Direct link to this page copied to clipboard!');
+        }).catch(() => {
+          prompt('Copy direct publication link:', url);
+        });
       });
     }
 
-    init();
+    function exitReader() {
+      $('#view-reader').hide();
+      $('#view-catalogue').show();
+      $('#flipbook').turn('destroy');
+      $('#flipbook').empty();
+      activePdfInstance = null;
+      renderedPageSet.clear();
+
+      // Refresh catalogue & resume shelf with updated pages
+      renderContinueShelf();
+      renderCatalogueGrid(folderFiles);
+
+      // Clean URL back to catalogue
+      history.pushState(null, '', window.location.pathname + (currentFolder ? `?folder=${encodeURIComponent(currentFolder.id)}` : ''));
+    }
+
+    $('#btn-back-to-catalogue').on('click', exitReader);
+
+    window.addEventListener('resize', () => {
+      if ($('#view-reader').is(':visible') && $('#flipbook').data('turn')) {
+        const dims = getViewportSize();
+        $('#flipbook').turn('display', dims.isMobile ? 'single' : 'double');
+        $('#flipbook').turn('size', dims.width, dims.height);
+      }
+    });
+
+    function updateBrowserUrl(fileId, page) {
+      if (!fileId) return;
+      const url = new URL(window.location);
+      url.searchParams.set('id', fileId);
+      if (page && page > 1) {
+        url.searchParams.set('page', page);
+      } else {
+        url.searchParams.delete('page');
+      }
+      history.replaceState(null, '', url.toString());
+    }
+
+    // ==========================================
+    // GOOGLE IDENTITY SERVICES (GIS) & PICKER
+    // ==========================================
+    function initGoogleServices() {
+      if (window.gapi) {
+        gapi.load('picker', () => {
+          pickerApiLoaded = true;
+        });
+      }
+
+      if (window.google && google.accounts && google.accounts.oauth2 && appConfig.clientId) {
+        gisTokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: appConfig.clientId,
+          scope: 'https://www.googleapis.com/auth/drive.readonly',
+          callback: (response) => {
+            if (response.error !== undefined) {
+              console.error("GIS OAuth Error:", response);
+              alert("Google authorization was cancelled or failed.");
+              return;
+            }
+            googleAccessToken = response.access_token;
+            $('#oauth-status-box').html(`
+              <span style="color:#10b981;">✓ Google Drive Authorized</span>
+            `);
+            openGooglePicker();
+          }
+        });
+      }
+    }
+
+    function openGooglePicker() {
+      if (!googleAccessToken) {
+        if (gisTokenClient) {
+          gisTokenClient.requestAccessToken({ prompt: 'consent' });
+        } else {
+          alert('Please enter your Google Cloud OAuth Client ID in Settings first.');
+          openSettingsModal();
+        }
+        return;
+      }
+
+      if (!pickerApiLoaded) {
+        alert('Google Picker API is still loading. Please try again in a few seconds.');
+        return;
+      }
+
+      const docsView = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+        .setSelectFolderEnabled(true)
+        .setMimeTypes('application/vnd.google-apps.folder');
+
+      const pickerBuilder = new google.picker.PickerBuilder()
+        .addView(docsView)
+        .setOAuthToken(googleAccessToken)
+        .setCallback((data) => {
+          if (data[google.picker.Response.ACTION] === google.picker.Action.PICKED) {
+            const doc = data[google.picker.Response.DOCUMENTS][0];
+            const folderId = doc[google.picker.Document.ID];
+            const folderName = doc[google.picker.Document.NAME];
+            closeModals();
+            loadFolderCatalogue(folderId, folderName);
+          }
+        });
+
+      if (appConfig.apiKey) {
+        pickerBuilder.setDeveloperKey(appConfig.apiKey);
+      }
+
+      const picker = pickerBuilder.build();
+      picker.setVisible(true);
+    }
+
+    // ==========================================
+    // MODALS & EVENT HANDLERS
+    // ==========================================
+    function openLinkerModal(tabName = 'tab-link-input') {
+      $('#modal-folder-picker').css('display', 'flex');
+      $(`.tab-btn[data-tab="${tabName}"]`).click();
+    }
+
+    function openSettingsModal() {
+      $('#cfg-gas-url').val(appConfig.gasEndpoint || DEFAULT_GAS_ENDPOINT);
+      $('#cfg-client-id').val(appConfig.clientId || '');
+      $('#cfg-api-key').val(appConfig.apiKey || '');
+      updateHistoryCountDisplay();
+      $('#modal-settings').css('display', 'flex');
+    }
+
+    function closeModals() {
+      $('.modal-backdrop').hide();
+    }
+
+    $('.modal-close, .modal-backdrop').on('click', function(e) {
+      if (e.target === this) closeModals();
+    });
+
+    $('.tab-btn').on('click', function() {
+      $('.tab-btn').removeClass('active');
+      $('.tab-pane').removeClass('active');
+      $(this).addClass('active');
+      $(`#${$(this).data('tab')}`).addClass('active');
+    });
+
+    $('#btn-open-linker, #hero-btn-link, #btn-active-folder').on('click', () => openLinkerModal('tab-link-input'));
+    $('#hero-btn-picker').on('click', () => openLinkerModal('tab-oauth-picker'));
+    $('#hero-btn-demo').on('click', loadDemoLibrary);
+    $('#btn-load-demo-library').on('click', loadDemoLibrary);
+
+    $('#btn-submit-folder-url').on('click', () => {
+      const raw = $('#input-folder-url').val();
+      const folderId = extractFolderId(raw);
+      if (!folderId) {
+        alert('Please enter a valid Google Drive folder URL or Folder ID.');
+        return;
+      }
+      closeModals();
+      loadFolderCatalogue(folderId);
+    });
+
+    $('#btn-authorize-google').on('click', () => {
+      if (!appConfig.clientId) {
+        const userClientId = prompt('Enter your Google Cloud OAuth Client ID:');
+        if (userClientId) {
+          saveAppConfig({ clientId: userClientId.trim() });
+          initGoogleServices();
+        } else {
+          return;
+        }
+      }
+      openGooglePicker();
+    });
+
+    $('#btn-open-settings').on('click', openSettingsModal);
+    $('#btn-close-settings-modal').on('click', closeModals);
+    $('#btn-close-linker-modal').on('click', closeModals);
+
+    $('#btn-save-settings').on('click', () => {
+      const gas = $('#cfg-gas-url').val().trim() || DEFAULT_GAS_ENDPOINT;
+      const cid = $('#cfg-client-id').val().trim();
+      const key = $('#cfg-api-key').val().trim();
+      saveAppConfig({ gasEndpoint: gas, clientId: cid, apiKey: key });
+      initGoogleServices();
+      closeModals();
+      alert('Settings saved successfully.');
+    });
+
+    $('#btn-clear-history').on('click', () => {
+      if (confirm('Clear all saved reading progress for this browser?')) {
+        clearReadingHistory();
+      }
+    });
+
+    $('#btn-refresh-folder').on('click', () => {
+      if (currentFolder) {
+        if (currentFolder.id === 'demo-library') {
+          loadDemoLibrary();
+        } else {
+          loadFolderCatalogue(currentFolder.id, currentFolder.name);
+        }
+      } else {
+        openLinkerModal();
+      }
+    });
+
+    $('#nav-brand').on('click', () => {
+      if ($('#view-reader').is(':visible')) {
+        exitReader();
+      }
+    });
+
+    // ==========================================
+    // INITIALIZATION & URL ROUTING
+    // ==========================================
+    async function initApp() {
+      // 1. Setup GIS/Picker
+      window.onload = () => {
+        setTimeout(initGoogleServices, 400);
+      };
+
+      // 2. Parse URL parameters: ?id=FILE_ID&page=PAGE_NUM or ?folder=FOLDER_ID
+      const params = new URLSearchParams(window.location.search);
+      const urlFileId = params.get('id');
+      const urlPage = parseInt(params.get('page'), 10) || 1;
+      const urlFolderId = params.get('folder');
+
+      // Check stored active folder
+      const storedFolder = localStorage.getItem(STORAGE_KEY_FOLDER);
+      if (storedFolder) {
+        try {
+          const parsed = JSON.parse(storedFolder);
+          if (parsed && parsed.id) {
+            currentFolder = parsed;
+          }
+        } catch (e) {}
+      }
+
+      // If a specific document ID is requested in URL, open reader directly
+      if (urlFileId) {
+        await openReader(urlFileId, 'Google Drive Publication', urlPage);
+        return;
+      }
+
+      // If a folder ID is in the URL, load it
+      if (urlFolderId) {
+        await loadFolderCatalogue(urlFolderId);
+        return;
+      }
+
+      // If previous folder was stored, load it
+      if (currentFolder && currentFolder.id) {
+        if (currentFolder.id === 'demo-library') {
+          loadDemoLibrary();
+        } else {
+          await loadFolderCatalogue(currentFolder.id, currentFolder.name);
+        }
+        return;
+      }
+
+      // Otherwise show onboarding hero
+      renderContinueShelf();
+      renderCatalogueGrid([]);
+    }
+
+    // Launch app
+    initApp();
   </script>
 </body>
 </html>
