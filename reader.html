@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Book & Magazine Reader</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #1e1e24;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #fff;
+    }
+    #toolbar {
+      position: fixed;
+      bottom: 20px;
+      display: flex;
+      gap: 12px;
+      background: rgba(30, 30, 36, 0.85);
+      padding: 10px 18px;
+      border-radius: 30px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      z-index: 1000;
+    }
+    button {
+      background: #3b82f6;
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    #page-info {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+    }
+    #flipbook-viewport {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100vw;
+      height: 85vh;
+    }
+    #flipbook {
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .page {
+      background-color: #fff;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #loading {
+      position: absolute;
+      font-size: 18px;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading">Loading publication...</div>
+
+  <div id="flipbook-viewport">
+    <div id="flipbook"></div>
+  </div>
+
+  <div id="toolbar">
+    <button id="prev-btn">Prev</button>
+    <div id="page-info"><span id="page-num">1</span> / <span id="total-pages">-</span></div>
+    <button id="next-btn">Next</button>
+    <button id="zoom-toggle">Fit/Zoom</button>
+  </div>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    // Parse Drive File ID from URL: reader.html?id=YOUR_DRIVE_FILE_ID
+    const urlParams = new URLSearchParams(window.location.search);
+    const driveFileId = urlParams.get('id');
+
+    // Google Drive direct stream URL format
+    const pdfUrl = driveFileId 
+      ? `https://drive.google.com/uc?export=download&id=${driveFileId}`
+      : 'sample.pdf';
+
+    let pdfDoc = null;
+    let totalPages = 0;
+
+    async function loadPDF() {
+      try {
+        pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+        totalPages = pdfDoc.numPages;
+        document.getElementById('total-pages').textContent = totalPages;
+        document.getElementById('loading').style.display = 'none';
+
+        const isMobile = window.innerWidth <= 768;
+        const bookWidth = isMobile ? window.innerWidth * 0.9 : Math.min(window.innerWidth * 0.85, 1000);
+        const bookHeight = isMobile ? window.innerHeight * 0.75 : Math.min(window.innerHeight * 0.8, 700);
+
+        // Render each page into turn.js elements
+        for (let i = 1; i <= totalPages; i++) {
+          const pageDiv = $('<div />', { class: 'page' });
+          const canvas = $('<canvas />')[0];
+          pageDiv.append(canvas);
+          $('#flipbook').append(pageDiv);
+
+          renderPage(i, canvas);
+        }
+
+        // Initialize Turn.js
+        $('#flipbook').turn({
+          width: bookWidth,
+          height: bookHeight,
+          autoCenter: true,
+          display: isMobile ? 'single' : 'double',
+          acceleration: true,
+          when: {
+            turned: function(e, page) {
+              document.getElementById('page-num').textContent = page;
+            }
+          }
+        });
+
+      } catch (err) {
+        document.getElementById('loading').textContent = 'Failed to load PDF. Verify sharing permissions.';
+      }
+    }
+
+    async function renderPage(num, canvas) {
+      const page = await pdfDoc.getPage(num);
+      const viewport = page.getViewport({ scale: 2 }); // High DPI rendering
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: canvas.getContext('2d'),
+        viewport: viewport
+      };
+      await page.render(renderContext).promise;
+    }
+
+    // Controls
+    $('#prev-btn').on('click', () => $('#flipbook').turn('previous'));
+    $('#next-btn').on('click', () => $('#flipbook').turn('next'));
+
+    window.addEventListener('resize', () => {
+      const isMobile = window.innerWidth <= 768;
+      const width = isMobile ? window.innerWidth * 0.9 : Math.min(window.innerWidth * 0.85, 1000);
+      const height = isMobile ? window.innerHeight * 0.75 : Math.min(window.innerHeight * 0.8, 700);
+      $('#flipbook').turn('display', isMobile ? 'single' : 'double');
+      $('#flipbook').turn('size', width, height);
+    });
+
+    loadPDF();
+  </script>
+</body>
+</html>

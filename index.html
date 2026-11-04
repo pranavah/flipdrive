@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlipDrive | Digital E-Book & Magazine Reader</title>
+  
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: #141419;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Status & Loading Overlay */
+    #status-overlay {
+      position: fixed;
+      inset: 0;
+      background: #141419;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      transition: opacity 0.3s ease;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #status-text {
+      font-size: 15px;
+      letter-spacing: 0.3px;
+      color: #94a3b8;
+    }
+
+    #error-box {
+      display: none;
+      max-width: 440px;
+      text-align: center;
+      padding: 24px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 12px;
+      color: #fca5a5;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Flipbook Container */
+    #flipbook-viewport {
+      position: relative;
+      width: 100vw;
+      height: 86vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #flipbook {
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.65);
+      transition: margin 0.2s ease;
+    }
+
+    .page {
+      background-color: #ffffff;
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Control Dock */
+    #toolbar {
+      position: fixed;
+      bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(26, 26, 34, 0.88);
+      padding: 8px 18px;
+      border-radius: 40px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    .btn {
+      background: #272732;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: #f1f5f9;
+      padding: 8px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    #page-counter {
+      font-size: 13px;
+      color: #cbd5e1;
+      padding: 0 8px;
+      min-width: 65px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      #toolbar {
+        bottom: 16px;
+        padding: 6px 14px;
+        gap: 6px;
+      }
+      .btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Loading & Feedback -->
+  <div id="status-overlay">
+    <div class="spinner" id="loading-spinner"></div>
+    <div id="status-text">Fetching publication...</div>
+    <div id="error-box"></div>
+  </div>
+
+  <!-- Reader Stage -->
+  <div id="flipbook-viewport">
+    <div id="flipbook"></div>
+  </div>
+
+  <!-- Bottom Control Bar -->
+  <div id="toolbar">
+    <button class="btn" id="first-btn" title="First Page">&laquo;</button>
+    <button class="btn" id="prev-btn" title="Previous Page">&lsaquo; Prev</button>
+    <div id="page-counter"><span id="curr-page">1</span> / <span id="total-pages">-</span></div>
+    <button class="btn" id="next-btn" title="Next Page">Next &rsaquo;</button>
+    <button class="btn" id="last-btn" title="Last Page">&raquo;</button>
+    <button class="btn" id="fullscreen-btn" title="Toggle Fullscreen">&#x26F6;</button>
+  </div>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const driveId = urlParams.get('id');
+    const directPdfUrl = urlParams.get('pdf');
+
+    // Determine target PDF URL
+    let streamUrl = '';
+    if (driveId) {
+      // Direct stream link bypassing Drive preview UI
+      streamUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
+    } else if (directPdfUrl) {
+      streamUrl = directPdfUrl;
+    }
+
+    const overlay = document.getElementById('status-overlay');
+    const statusText = document.getElementById('status-text');
+    const errorBox = document.getElementById('error-box');
+    const spinner = document.getElementById('loading-spinner');
+
+    function showError(msg) {
+      spinner.style.display = 'none';
+      statusText.style.display = 'none';
+      errorBox.style.display = 'block';
+      errorBox.innerHTML = msg;
+    }
+
+    function calculateDimensions() {
+      const isMobile = window.innerWidth <= 768;
+      const targetW = isMobile ? window.innerWidth * 0.94 : Math.min(window.innerWidth * 0.9, 1100);
+      const targetH = isMobile ? window.innerHeight * 0.76 : Math.min(window.innerHeight * 0.82, 740);
+      return { width: Math.round(targetW), height: Math.round(targetH), isMobile };
+    }
+
+    async function initReader() {
+      if (!streamUrl) {
+        showError(
+          '<strong>No document specified.</strong><br>' +
+          'Append your Google Drive File ID to the URL:<br>' +
+          '<code>?id=YOUR_GOOGLE_DRIVE_FILE_ID</code>'
+        );
+        return;
+      }
+
+      try {
+        statusText.textContent = 'Downloading PDF metadata...';
+        const loadingTask = pdfjsLib.getDocument({
+          url: streamUrl,
+          withCredentials: false
+        });
+
+        loadingTask.onProgress = function(progress) {
+          if (progress.total > 0) {
+            const pct = Math.round((progress.loaded / progress.total) * 100);
+            statusText.textContent = `Loading document (${pct}%)...`;
+          }
+        };
+
+        const pdfDoc = await loadingTask.promise;
+        const totalPages = pdfDoc.numPages;
+        document.getElementById('total-pages').textContent = totalPages;
+
+        statusText.textContent = 'Preparing pages...';
+        const { width, height, isMobile } = calculateDimensions();
+
+        // Populate flipbook page containers
+        for (let i = 1; i <= totalPages; i++) {
+          const pageDiv = $('<div />', { class: 'page', id: `p-${i}` });
+          const canvas = $('<canvas />')[0];
+          pageDiv.append(canvas);
+          $('#flipbook').append(pageDiv);
+
+          // Render high-res raster
+          renderPage(pdfDoc, i, canvas);
+        }
+
+        // Initialize turn.js
+        $('#flipbook').turn({
+          width: width,
+          height: height,
+          autoCenter: true,
+          display: isMobile ? 'single' : 'double',
+          acceleration: true,
+          elevation: 50,
+          gradients: true,
+          when: {
+            turned: function(e, page) {
+              document.getElementById('curr-page').textContent = page;
+              updateButtonStates(page, totalPages);
+            }
+          }
+        });
+
+        // Hide overlay once ready
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.display = 'none', 300);
+
+        setupControls(totalPages);
+
+      } catch (err) {
+        console.error(err);
+        showError(
+          '<strong>Unable to display PDF.</strong><br>' +
+          'Please ensure the Google Drive file permission is set to <em>"Anyone with the link can view"</em> and third-party cookies are not blocked.'
+        );
+      }
+    }
+
+    async function renderPage(pdfDoc, pageNum, canvas) {
+      try {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 2.0 }); // HiDPI / Retina render
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const ctx = canvas.getContext('2d');
+        await page.render({
+          canvasContext: ctx,
+          viewport: viewport
+        }).promise;
+      } catch (e) {
+        console.warn(`Error rendering page ${pageNum}:`, e);
+      }
+    }
+
+    function updateButtonStates(page, total) {
+      document.getElementById('prev-btn').disabled = (page <= 1);
+      document.getElementById('first-btn').disabled = (page <= 1);
+      document.getElementById('next-btn').disabled = (page >= total);
+      document.getElementById('last-btn').disabled = (page >= total);
+    }
+
+    function setupControls(totalPages) {
+      $('#prev-btn').on('click', () => $('#flipbook').turn('previous'));
+      $('#next-btn').on('click', () => $('#flipbook').turn('next'));
+      $('#first-btn').on('click', () => $('#flipbook').turn('page', 1));
+      $('#last-btn').on('click', () => $('#flipbook').turn('page', totalPages));
+
+      // Keyboard navigation
+      $(document).on('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'PageDown') $('#flipbook').turn('next');
+        if (e.key === 'ArrowLeft' || e.key === 'PageUp') $('#flipbook').turn('previous');
+      });
+
+      // Fullscreen toggle
+      $('#fullscreen-btn').on('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      });
+
+      // Responsive resize
+      window.addEventListener('resize', () => {
+        const dims = calculateDimensions();
+        $('#flipbook').turn('display', dims.isMobile ? 'single' : 'double');
+        $('#flipbook').turn('size', dims.width, dims.height);
+      });
+    }
+
+    initReader();
+  </script>
+</body>
+</html>
