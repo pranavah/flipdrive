@@ -4,37 +4,35 @@
 
 FlipDrive is a lightweight, responsive flipbook reader designed to host and render PDFs stored directly in Google Drive. By serving PDFs straight from Drive, it uses zero hosting storage and works out-of-the-box across desktops, tablets, and smartphones.
 
----
-
 ## ⚡ Features
 
-- **Zero Host Storage:** Stream documents directly from public Google Drive links.
-- **Realistic Page-Flip Experience:** Powered by Turn.js and PDF.js.
-- **Adaptive Layout:** Automatically switches between a two-page magazine layout on desktops and a single-page swipeable view on mobile.
-- **Multi-Platform Embedding:** Ready-to-use `iframe` embeds and a companion WordPress shortcode plugin.
-- **Zero Build Tools:** Pure vanilla HTML, CSS, and JavaScript—hostable directly on GitHub Pages.
+* **Zero Host Storage:** Stream documents directly from public Google Drive links.
+* **Realistic Page-Flip Experience:** Powered by Turn.js and PDF.js.
+* **Adaptive Layout:** Automatically switches between a two-page magazine layout on desktops and a single-page swipeable view on mobile.
+* **Multi-Platform Embedding:** Ready-to-use `iframe` embeds and a companion WordPress shortcode plugin.
+* **Zero Build Tools:** Pure vanilla HTML, CSS, and JavaScript—hosted directly on GitHub Pages.
 
 ---
 
 ## 🚀 Quick Start (GitHub Pages)
 
-### 1. Fork or Clone the Repo
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/<YOUR_USERNAME>/flipdrive.git
+git clone https://github.com/pranavah/flipdrive.git
 cd flipdrive
 ```
 
 ### 2. Enable GitHub Pages
 
-1. Navigate to **Settings** → **Pages** in your repository.
+1. Navigate to **Settings** → **Pages** in your `flipdrive` repository.
 2. Under **Build and deployment > Source**, select **Deploy from a branch**.
 3. Choose branch: `main` and folder: `/ (root)`.
 4. Click **Save**.
 
-Your reader is now live at:
+Your reader will be live at:
 ```text
-https://<YOUR_USERNAME>.github.io/flipdrive/?id=GOOGLE_DRIVE_FILE_ID
+https://pranavah.github.io/flipdrive/?id=GOOGLE_DRIVE_FILE_ID
 ```
 
 ---
@@ -60,7 +58,7 @@ Add this snippet to Notion, Webflow, Squarespace, Wix, or custom HTML:
 ```html
 <div style="position: relative; width: 100%; max-width: 960px; aspect-ratio: 4 / 3; margin: auto;">
   <iframe 
-    src="https://<YOUR_USERNAME>.github.io/flipdrive/?id=GOOGLE_DRIVE_FILE_ID" 
+    src="https://pranavah.github.io/flipdrive/?id=GOOGLE_DRIVE_FILE_ID" 
     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);" 
     allowfullscreen>
   </iframe>
@@ -86,7 +84,7 @@ A custom companion WordPress plugin is included to simplify embeds.
 Embed any document inside standard blocks or Elementor:
 
 ```text
-[ebook_reader reader="https://<YOUR_USERNAME>.github.io/flipdrive/" id="GOOGLE_DRIVE_FILE_ID" height="700px"]
+[ebook_reader reader="https://pranavah.github.io/flipdrive/" id="GOOGLE_DRIVE_FILE_ID" height="700px"]
 ```
 
 #### Shortcode Parameters
@@ -94,7 +92,7 @@ Embed any document inside standard blocks or Elementor:
 | Parameter | Default | Description |
 | :--- | :--- | :--- |
 | `id` | *(Required)* | The Google Drive file ID. |
-| `reader` | `https://yourdomain.com/reader.html` | Base URL of your deployed FlipDrive reader. |
+| `reader` | `https://pranavah.github.io/flipdrive/` | Base URL of your deployed FlipDrive reader. |
 | `width` | `100%` | CSS width of the embed container. |
 | `height` | `650px` | CSS height of the embed container. |
 
@@ -102,9 +100,9 @@ Embed any document inside standard blocks or Elementor:
 
 ## 🛠️ Tech Stack
 
-- **[PDF.js](https://mozilla.github.io/pdf.js/)** – Client-side PDF rendering.
-- **[Turn.js](http://www.turnjs.com/)** – Realistic page-turn animations.
-- **[jQuery](https://jquery.com/)** – DOM and event manipulation.
+* [**PDF.js**](https://mozilla.github.io/pdf.js/) – Client-side PDF rendering.
+* [**Turn.js**](http://www.turnjs.com/) – Realistic page-turn animations.
+* [**jQuery**](https://jquery.com/) – DOM and event manipulation.
 
 ---
 

@@ -31,7 +31,6 @@
       justify-content: center;
     }
 
-    /* Status & Loading Overlay */
     #status-overlay {
       position: fixed;
       inset: 0;
@@ -42,6 +41,7 @@
       justify-content: center;
       z-index: 2000;
       transition: opacity 0.3s ease;
+      padding: 20px;
     }
 
     .spinner {
@@ -62,11 +62,12 @@
       font-size: 15px;
       letter-spacing: 0.3px;
       color: #94a3b8;
+      text-align: center;
     }
 
     #error-box {
       display: none;
-      max-width: 440px;
+      max-width: 480px;
       text-align: center;
       padding: 24px;
       background: rgba(239, 68, 68, 0.1);
@@ -77,7 +78,6 @@
       line-height: 1.6;
     }
 
-    /* Flipbook Container */
     #flipbook-viewport {
       position: relative;
       width: 100vw;
@@ -89,7 +89,6 @@
 
     #flipbook {
       box-shadow: 0 15px 45px rgba(0, 0, 0, 0.65);
-      transition: margin 0.2s ease;
     }
 
     .page {
@@ -103,7 +102,6 @@
       display: block;
     }
 
-    /* Control Dock */
     #toolbar {
       position: fixed;
       bottom: 24px;
@@ -154,7 +152,6 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* Responsive adjustments */
     @media (max-width: 640px) {
       #toolbar {
         bottom: 16px;
@@ -173,7 +170,7 @@
   <!-- Loading & Feedback -->
   <div id="status-overlay">
     <div class="spinner" id="loading-spinner"></div>
-    <div id="status-text">Fetching publication...</div>
+    <div id="status-text">Connecting to document source...</div>
     <div id="error-box"></div>
   </div>
 
@@ -199,15 +196,6 @@
     const driveId = urlParams.get('id');
     const directPdfUrl = urlParams.get('pdf');
 
-    // Determine target PDF URL
-    let streamUrl = '';
-    if (driveId) {
-      // Direct stream link bypassing Drive preview UI
-      streamUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
-    } else if (directPdfUrl) {
-      streamUrl = directPdfUrl;
-    }
-
     const overlay = document.getElementById('status-overlay');
     const statusText = document.getElementById('status-text');
     const errorBox = document.getElementById('error-box');
@@ -227,8 +215,54 @@
       return { width: Math.round(targetW), height: Math.round(targetH), isMobile };
     }
 
+    // Build URL candidates to bypass CORS restrictions
+    function getCandidateUrls(driveId, directUrl) {
+      if (directUrl) return [directUrl];
+      if (!driveId) return [];
+
+      const rawDriveUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
+      const encodedRaw = encodeURIComponent(rawDriveUrl);
+
+      return [
+        `https://corsproxy.io/?url=${encodedRaw}`,
+        `https://api.allorigins.win/raw?url=${encodedRaw}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodedRaw}`
+      ];
+    }
+
+    async function fetchPdfDocument(candidates) {
+      let lastError = null;
+
+      for (let i = 0; i < candidates.length; i++) {
+        const candidateUrl = candidates[i];
+        statusText.textContent = `Fetching document (attempt ${i + 1}/${candidates.length})...`;
+
+        try {
+          const loadingTask = pdfjsLib.getDocument({
+            url: candidateUrl,
+            withCredentials: false
+          });
+
+          loadingTask.onProgress = function(progress) {
+            if (progress.total > 0) {
+              const pct = Math.round((progress.loaded / progress.total) * 100);
+              statusText.textContent = `Streaming publication (${pct}%)...`;
+            }
+          };
+
+          const doc = await loadingTask.promise;
+          return doc;
+        } catch (err) {
+          console.warn(`Proxy ${candidateUrl} failed:`, err);
+          lastError = err;
+        }
+      }
+
+      throw lastError || new Error("Failed to load PDF across all endpoints");
+    }
+
     async function initReader() {
-      if (!streamUrl) {
+      if (!driveId && !directPdfUrl) {
         showError(
           '<strong>No document specified.</strong><br>' +
           'Append your Google Drive File ID to the URL:<br>' +
@@ -238,38 +272,25 @@
       }
 
       try {
-        statusText.textContent = 'Downloading PDF metadata...';
-        const loadingTask = pdfjsLib.getDocument({
-          url: streamUrl,
-          withCredentials: false
-        });
-
-        loadingTask.onProgress = function(progress) {
-          if (progress.total > 0) {
-            const pct = Math.round((progress.loaded / progress.total) * 100);
-            statusText.textContent = `Loading document (${pct}%)...`;
-          }
-        };
-
-        const pdfDoc = await loadingTask.promise;
+        const candidates = getCandidateUrls(driveId, directPdfUrl);
+        const pdfDoc = await fetchPdfDocument(candidates);
         const totalPages = pdfDoc.numPages;
         document.getElementById('total-pages').textContent = totalPages;
 
-        statusText.textContent = 'Preparing pages...';
+        statusText.textContent = 'Rendering layout...';
         const { width, height, isMobile } = calculateDimensions();
 
-        // Populate flipbook page containers
+        // Render page containers
         for (let i = 1; i <= totalPages; i++) {
           const pageDiv = $('<div />', { class: 'page', id: `p-${i}` });
           const canvas = $('<canvas />')[0];
           pageDiv.append(canvas);
           $('#flipbook').append(pageDiv);
 
-          // Render high-res raster
           renderPage(pdfDoc, i, canvas);
         }
 
-        // Initialize turn.js
+        // Initialize flipbook
         $('#flipbook').turn({
           width: width,
           height: height,
@@ -286,17 +307,19 @@
           }
         });
 
-        // Hide overlay once ready
+        // Hide loader overlay
         overlay.style.opacity = '0';
         setTimeout(() => overlay.style.display = 'none', 300);
 
         setupControls(totalPages);
 
       } catch (err) {
-        console.error(err);
+        console.error("Initialization error:", err);
         showError(
-          '<strong>Unable to display PDF.</strong><br>' +
-          'Please ensure the Google Drive file permission is set to <em>"Anyone with the link can view"</em> and third-party cookies are not blocked.'
+          '<strong>Unable to access publication.</strong><br><br>' +
+          '1. Confirm the Google Drive file permission is set to <strong>"Anyone with the link can view"</strong>.<br>' +
+          '2. Make sure the file ID in the URL is correct.<br>' +
+          '3. If the file is very large (>50MB), Google Drive displays a virus scan prompt that prevents direct streaming.'
         );
       }
     }
@@ -304,7 +327,7 @@
     async function renderPage(pdfDoc, pageNum, canvas) {
       try {
         const page = await pdfDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 2.0 }); // HiDPI / Retina render
+        const viewport = page.getViewport({ scale: 2.0 });
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
@@ -331,13 +354,11 @@
       $('#first-btn').on('click', () => $('#flipbook').turn('page', 1));
       $('#last-btn').on('click', () => $('#flipbook').turn('page', totalPages));
 
-      // Keyboard navigation
       $(document).on('keydown', (e) => {
         if (e.key === 'ArrowRight' || e.key === 'PageDown') $('#flipbook').turn('next');
         if (e.key === 'ArrowLeft' || e.key === 'PageUp') $('#flipbook').turn('previous');
       });
 
-      // Fullscreen toggle
       $('#fullscreen-btn').on('click', () => {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(() => {});
@@ -346,7 +367,6 @@
         }
       });
 
-      // Responsive resize
       window.addEventListener('resize', () => {
         const dims = calculateDimensions();
         $('#flipbook').turn('display', dims.isMobile ? 'single' : 'double');

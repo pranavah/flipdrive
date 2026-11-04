@@ -1,5 +1,0 @@
-How to Use the WordPress Shortcode
-In any WordPress post, page, or Elementor shortcode block, paste:
-
-Plaintext
-[ebook_reader id="YOUR_GOOGLE_DRIVE_FILE_ID" height="700px"]
