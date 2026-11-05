@@ -2057,7 +2057,24 @@
       stage.append('<div id="flipbook"></div>');
     }
 
+    function getPdfLoadError(error) {
+      const message = error && (error.message || error.toString());
+      return String(message || 'Unknown error').replace(/\s+/g, ' ').slice(0, 240);
+    }
+
+    function isPdfBytes(bytes) {
+      return bytes && bytes.length >= 5 &&
+        String.fromCharCode.apply(null, bytes.subarray(0, 5)) === '%PDF-';
+    }
+
     async function fetchPdfDocument(fileId, fileMeta = null) {
+      const failures = [];
+      const recordFailure = (source, error) => {
+        const detail = getPdfLoadError(error);
+        failures.push(`${source}: ${detail}`);
+        console.warn(`${source} failed:`, error);
+      };
+
       // 1. Direct URL (e.g. demo files)
       if (fileMeta && fileMeta.directUrl) {
         showStatus('Loading sample publication stream...');
@@ -2074,13 +2091,23 @@
           });
           if (resp.ok) {
             const buf = await resp.arrayBuffer();
-            const header = new Uint8Array(buf.slice(0, 5));
-            if (String.fromCharCode.apply(null, header).startsWith('%PDF')) {
-              return await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+            const bytes = new Uint8Array(buf);
+            if (isPdfBytes(bytes)) {
+              return await pdfjsLib.getDocument({ data: bytes }).promise;
             }
+            throw new Error('Drive API returned a response that is not a PDF.');
           }
+          const errorBody = await resp.text();
+          let errorMessage = `HTTP ${resp.status} ${resp.statusText}`;
+          try {
+            const errorData = JSON.parse(errorBody);
+            errorMessage = errorData.error?.message || errorMessage;
+          } catch (parseErr) {
+            if (errorBody) errorMessage += `: ${errorBody.slice(0, 160)}`;
+          }
+          throw new Error(errorMessage);
         } catch (authErr) {
-          console.warn("OAuth fetch failed, trying GAS bridge:", authErr);
+          recordFailure('Google Drive API', authErr);
         }
       }
 
@@ -2091,70 +2118,96 @@
           showStatus('Streaming document via Google Apps Script bridge...');
           const targetUrl = `${gasUrl}?action=get&id=${encodeURIComponent(fileId)}`;
           const resp = await fetch(targetUrl);
-          if (resp.ok) {
-            const data = await resp.json();
-
-            if (data.status === 'success') {
-              if (data.base64 && data.base64.length > 50) {
-                showStatus('Unpacking document bytes...');
-                const pdfBytes = base64ToUint8Array(data.base64);
-                return await pdfjsLib.getDocument({ data: pdfBytes }).promise;
-              } else if (data.downloadUrl) {
-                showStatus('Streaming publication from direct URL...');
-                const pdfDoc = await fetchPdfFromUrl(data.downloadUrl);
-                if (pdfDoc) return pdfDoc;
-              }
-            } else if (data.status === 'error') {
-              console.warn("Apps Script returned error:", data.message);
-            }
+          const responseText = await resp.text();
+          if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
           }
+
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseErr) {
+            throw new Error(`Expected JSON but received: ${responseText.slice(0, 160) || 'an empty response'}`);
+          }
+
+          if (data.status === 'error') {
+            throw new Error(data.message || 'Apps Script reported an unspecified error.');
+          }
+          if (data.status !== 'success') {
+            throw new Error('Apps Script response is missing a success status.');
+          }
+
+          if (data.base64 && data.base64.length > 50) {
+            showStatus('Unpacking document bytes...');
+            const pdfBytes = base64ToUint8Array(data.base64);
+            if (!isPdfBytes(pdfBytes)) {
+              throw new Error('Apps Script returned data that is not a PDF.');
+            }
+            return await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+          }
+          if (data.downloadUrl) {
+            showStatus('Streaming publication from direct URL...');
+            const pdfDoc = await fetchPdfFromUrl(data.downloadUrl, failures, 'Apps Script download URL');
+            if (pdfDoc) return pdfDoc;
+            throw new Error(data.warning || 'Could not download the file returned by Apps Script.');
+          }
+          throw new Error(data.warning || 'Apps Script returned neither PDF data nor a download URL.');
         } catch (gasErr) {
-          console.warn("Apps Script bridge failed, trying fallback stream pipelines:", gasErr);
+          recordFailure('Apps Script bridge', gasErr);
         }
+      } else {
+        recordFailure('Apps Script bridge', new Error('No bridge URL is configured.'));
       }
 
       // 4. Redundant Direct Stream Pipelines (CORS Proxies)
       showStatus('Connecting to redundant publication stream...');
-      const fallbackPdf = await fetchViaProxy(fileId);
+      const fallbackPdf = await fetchViaProxy(fileId, failures);
       if (fallbackPdf) {
         return fallbackPdf;
       }
 
-      throw new Error("Unable to stream PDF from Google Drive. Please verify the PDF file sharing is set to 'Anyone with the link can view'.");
+      const details = failures.slice(0, 5).join('\n');
+      throw new Error(
+        `All PDF sources failed. Check that the file is a PDF and is accessible to the Apps Script account. ` +
+        `For a private file, authorize Google Drive in Settings. ${details}`
+      );
     }
 
-    async function fetchPdfFromUrl(url) {
+    async function fetchPdfFromUrl(url, failures = [], source = 'Drive download') {
       const proxies = [
-        `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+        { name: 'corsproxy.io', url: `https://corsproxy.io/?url=${encodeURIComponent(url)}` },
+        { name: 'allorigins.win', url: `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` },
+        { name: 'codetabs.com', url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}` }
       ];
 
-      for (const pUrl of proxies) {
+      for (const proxy of proxies) {
         try {
-          const resp = await fetch(pUrl);
-          if (resp.ok) {
-            const buf = await resp.arrayBuffer();
-            const header = new Uint8Array(buf.slice(0, 5));
-            if (String.fromCharCode.apply(null, header).startsWith('%PDF')) {
-              return await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
-            }
+          const resp = await fetch(proxy.url);
+          if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
           }
-        } catch (e) {
-          console.warn("Direct proxy attempt failed:", e);
+          const bytes = new Uint8Array(await resp.arrayBuffer());
+          if (!isPdfBytes(bytes)) {
+            throw new Error('Response was not a PDF.');
+          }
+          return await pdfjsLib.getDocument({ data: bytes }).promise;
+        } catch (error) {
+          const detail = getPdfLoadError(error);
+          failures.push(`${source} via ${proxy.name}: ${detail}`);
+          console.warn(`${source} via ${proxy.name} PDF fetch failed:`, error);
         }
       }
       return null;
     }
 
-    async function fetchViaProxy(fileId) {
+    async function fetchViaProxy(fileId, failures = []) {
       const directCandidates = [
-        `https://drive.usercontent.google.com/download?id=${fileId}&export=download`,
-        `https://drive.google.com/uc?export=download&id=${fileId}`
+        { name: 'Drive download', url: `https://drive.usercontent.google.com/download?id=${fileId}&export=download` },
+        { name: 'Drive uc download', url: `https://drive.google.com/uc?export=download&id=${fileId}` }
       ];
 
-      for (const directUrl of directCandidates) {
-        const doc = await fetchPdfFromUrl(directUrl);
+      for (const candidate of directCandidates) {
+        const doc = await fetchPdfFromUrl(candidate.url, failures, candidate.name);
         if (doc) return doc;
       }
       return null;
@@ -2242,7 +2295,7 @@
         const errorDetail = (err && (err.message || err.toString())) || (typeof err === 'object' ? JSON.stringify(err) : String(err));
         showErrorStatus(`
           <strong>Unable to load publication</strong><br><br>
-          <div style="background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #fca5a5; word-break: break-word; text-align: left;">
+          <div style="background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #fca5a5; word-break: break-word; white-space: pre-wrap; text-align: left;">
             ${escapeHtml(errorDetail)}
           </div><br>
           <span style="font-size: 13px; color: #cbd5e1;">
