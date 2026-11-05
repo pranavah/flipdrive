@@ -1619,8 +1619,24 @@
 
     function base64ToUint8Array(base64) {
       if (!base64 || typeof base64 !== 'string') return new Uint8Array(0);
-      const cleanBase64 = base64.replace(/\s/g, '');
-      const raw = atob(cleanBase64);
+      let cleanBase64 = base64.replace(/\s/g, '').replace(/-/g, '+').replace(/_/g, '/');
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleanBase64)) {
+        throw new Error('Base64 data contains invalid characters.');
+      }
+      const paddingIndex = cleanBase64.indexOf('=');
+      if (paddingIndex !== -1 && cleanBase64.length % 4 !== 0) {
+        throw new Error('Base64 data has invalid padding.');
+      }
+      if (cleanBase64.length % 4 === 1) {
+        throw new Error('Base64 data is truncated.');
+      }
+      cleanBase64 += '='.repeat((4 - cleanBase64.length % 4) % 4);
+      let raw;
+      try {
+        raw = atob(cleanBase64);
+      } catch (error) {
+        throw new Error(`Could not decode Base64 data: ${getPdfLoadError(error)}`);
+      }
       const len = raw.length;
       const uint8 = new Uint8Array(len);
       for (let i = 0; i < len; i++) {
@@ -2194,7 +2210,7 @@
 
     async function fetchPdfInChunks(gasUrl, fileId, metadata) {
       const totalBytes = Number(metadata.sizeBytes);
-      const chunkSize = Number(metadata.chunkSize) || 4 * 1024 * 1024;
+      const chunkSize = Number(metadata.chunkSize) || 512 * 1024;
       const maxChunkSize = 4 * 1024 * 1024;
       if (!Number.isSafeInteger(totalBytes) || totalBytes <= 0 ||
           !Number.isSafeInteger(chunkSize) || chunkSize <= 0 || chunkSize > maxChunkSize) {
@@ -2231,7 +2247,15 @@
           throw new Error('Apps Script returned a chunk for an unexpected file range.');
         }
 
-        const chunkBytes = base64ToUint8Array(chunk.base64);
+        let chunkBytes;
+        try {
+          chunkBytes = base64ToUint8Array(chunk.base64);
+        } catch (error) {
+          throw new Error(`Invalid Base64 for PDF chunk at byte ${offset} (${chunk.base64.length} encoded characters): ${getPdfLoadError(error)}`);
+        }
+        if (chunk.byteLength !== undefined && Number(chunk.byteLength) !== chunkBytes.length) {
+          throw new Error(`Apps Script returned inconsistent byte-length metadata at byte ${offset}.`);
+        }
         if (chunkBytes.length !== length) {
           throw new Error(`Apps Script returned an incomplete chunk at byte ${offset}.`);
         }
@@ -2835,6 +2859,7 @@
         id: fileId,
         offset: offset,
         totalBytes: totalBytes,
+        byteLength: chunkBytes.length,
         base64: Utilities.base64Encode(chunkBytes)
       })).setMimeType(ContentService.MimeType.JSON);
     }
@@ -2859,7 +2884,7 @@
           mimeType: file.getMimeType(),
           downloadUrl: directDownloadUrl,
           chunked: true,
-          chunkSize: 4 * 1024 * 1024
+          chunkSize: 512 * 1024
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
@@ -2886,7 +2911,7 @@
           mimeType: file.getMimeType(),
           downloadUrl: directDownloadUrl,
           chunked: true,
-          chunkSize: 4 * 1024 * 1024,
+          chunkSize: 512 * 1024,
           warning: blobErr.toString()
         })).setMimeType(ContentService.MimeType.JSON);
       }

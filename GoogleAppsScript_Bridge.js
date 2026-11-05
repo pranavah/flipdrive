@@ -218,6 +218,7 @@ function doGet(e) {
         id: fileId,
         offset: offset,
         totalBytes: totalBytes,
+        byteLength: chunkBytes.length,
         base64: Utilities.base64Encode(chunkBytes)
       });
     }
@@ -255,7 +256,7 @@ function doGet(e) {
           mimeType: file.getMimeType(),
           downloadUrl: directDownloadUrl,
           chunked: true,
-          chunkSize: 4 * 1024 * 1024
+          chunkSize: 512 * 1024
         });
       }
 
@@ -283,7 +284,7 @@ function doGet(e) {
           mimeType: file.getMimeType(),
           downloadUrl: directDownloadUrl,
           chunked: true,
-          chunkSize: 4 * 1024 * 1024,
+          chunkSize: 512 * 1024,
           warning: blobErr.toString()
         });
       }
