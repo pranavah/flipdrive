@@ -138,7 +138,6 @@
       font-weight: 700;
       letter-spacing: -0.5px;
       background: linear-gradient(to right, #ffffff, #94a3b8);
-      background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -170,7 +169,7 @@
       border-radius: 20px;
       font-size: 13px;
       color: #cbd5e1;
-      max-width: 320px;
+      max-width: 340px;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -225,7 +224,7 @@
     .hero-subtitle {
       font-size: 15px;
       color: var(--text-muted);
-      max-width: 620px;
+      max-width: 650px;
       margin: 0 auto 28px;
       line-height: 1.6;
     }
@@ -336,6 +335,73 @@
       color: var(--text-muted);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
+    }
+
+    /* Category Filter Bar */
+    .category-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+      overflow-x: auto;
+      padding: 4px 2px 10px;
+      scrollbar-width: thin;
+    }
+    .category-filter-bar::-webkit-scrollbar {
+      height: 4px;
+    }
+    .category-filter-bar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    .category-filter-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .category-chips-list {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+    .category-chip {
+      background: #151d30;
+      border: 1px solid var(--border-color);
+      color: #cbd5e1;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      outline: none;
+    }
+    .category-chip:hover {
+      background: #1c2742;
+      border-color: rgba(59, 130, 246, 0.4);
+      color: #fff;
+    }
+    .category-chip.active {
+      background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    }
+    .category-count {
+      font-size: 11px;
+      opacity: 0.8;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 1px 6px;
+      border-radius: 10px;
     }
 
     /* Catalogue Toolbar */
@@ -472,8 +538,8 @@
       color: #e2e8f0;
       line-height: 1.4;
       display: -webkit-box;
-      line-clamp: 4;
       -webkit-line-clamp: 4;
+      line-clamp: 4;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -522,6 +588,28 @@
       display: flex;
       flex-direction: column;
       flex: 1;
+    }
+
+    .card-category-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .card-category-tag:hover {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: #38bdf8;
     }
 
     .book-title {
@@ -848,6 +936,8 @@
     }
     .modal-body {
       padding: 24px;
+      max-height: 80vh;
+      overflow-y: auto;
     }
     .modal-footer {
       padding: 16px 24px;
@@ -1018,7 +1108,7 @@
     <div class="hero-linker" id="hero-linker-box">
       <h1 class="hero-title">Connect your Google Drive PDF Library</h1>
       <p class="hero-subtitle">
-        Select any Google Drive folder to instantly generate an interactive publication catalogue with live thumbnails, seamless 3D page-flip reading, and automatic progress bookmarking.
+        Select any Google Drive folder to instantly index all PDF files and subfolders into a categorized publication catalogue with live thumbnails, 3D flipbook reading, and automatic progress resumption.
       </p>
       <div class="hero-buttons">
         <button class="btn btn-primary" id="hero-btn-picker">
@@ -1055,6 +1145,17 @@
       <div id="continue-card-wrapper"></div>
     </div>
 
+    <!-- Category Filter Bar (Subfolders) -->
+    <div class="category-filter-bar" id="category-filter-bar" style="display: none;">
+      <span class="category-filter-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        Categories:
+      </span>
+      <div class="category-chips-list" id="category-chips-container"></div>
+    </div>
+
     <!-- Catalogue Header & Toolbar -->
     <div class="catalogue-toolbar">
       <div class="search-box">
@@ -1062,12 +1163,13 @@
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input type="text" id="catalogue-search" placeholder="Search publications by title...">
+        <input type="text" id="catalogue-search" placeholder="Search publications by title or category...">
       </div>
 
       <div class="toolbar-actions">
         <select class="sort-select" id="catalogue-sort">
           <option value="recent">Recently Read</option>
+          <option value="category">Category / Subfolder</option>
           <option value="name-asc">Name (A → Z)</option>
           <option value="name-desc">Name (Z → A)</option>
           <option value="date-desc">Newest First</option>
@@ -1168,7 +1270,7 @@
             <label class="form-label">Google Drive Folder URL or Folder ID</label>
             <input type="text" class="form-input" id="input-folder-url" placeholder="https://drive.google.com/drive/folders/1w7nE72Jk... or 1w7n...">
             <div class="form-hint">
-              Paste the shareable link of any Google Drive folder containing your PDF files. Make sure the folder sharing is set to <strong>"Anyone with the link can view"</strong>.
+              Paste the shareable link of any Google Drive folder. FlipDrive will recursively scan the folder and all its subfolders. Ensure folder sharing is set to <strong>"Anyone with the link can view"</strong>.
             </div>
           </div>
           <button class="btn btn-primary" style="width: 100%;" id="btn-submit-folder-url">Fetch PDF Catalogue</button>
@@ -1197,10 +1299,51 @@
         <!-- Tab 3: Demo Library -->
         <div class="tab-pane" id="tab-demo">
           <p style="font-size:13px; color:var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-            Want to test FlipDrive immediately? Load our curated sample library featuring public domain publications, complete with 3D flipbook reading and bookmarking.
+            Want to test FlipDrive immediately? Load our curated sample library featuring categorized publications, complete with 3D flipbook reading and bookmarking.
           </p>
           <button class="btn btn-primary" style="width: 100%;" id="btn-load-demo-library">Load Demo Library</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bridge Update Helper Modal -->
+  <div class="modal-backdrop" id="modal-bridge-help">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Update Google Apps Script Bridge</h3>
+        <button class="modal-close" onclick="$('#modal-bridge-help').hide()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;">
+          <div style="color: #f87171; font-weight: 600; font-size: 14px; margin-bottom: 4px;">Bridge Needs Redeployment</div>
+          <div style="color: #cbd5e1; font-size: 13px; line-height: 1.5;">
+            The Google Apps Script Web App endpoint is currently running the older single-file bridge, so it cannot index folder contents or subfolders.
+          </div>
+        </div>
+
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 14px;">
+          Follow these 3 quick steps to enable recursive folder scanning and subfolder categories:
+        </p>
+
+        <ol style="font-size: 13px; color: #cbd5e1; margin-left: 20px; line-height: 1.8; margin-bottom: 18px;">
+          <li>Open your script at <a href="https://script.google.com/" target="_blank" style="color: #60a5fa; text-decoration: underline;">script.google.com</a>.</li>
+          <li>Replace all contents of <code>Code.gs</code> with the recursive bridge script:
+            <button class="btn btn-secondary btn-sm" id="btn-copy-bridge-code" style="margin-left: 6px;">
+              📋 Copy Updated Bridge Code
+            </button>
+          </li>
+          <li>Click <strong>Deploy &rarr; Manage deployments &rarr; Edit (pencil icon)</strong>, select <strong>"New version"</strong>, ensure access is <strong>"Anyone"</strong>, and click <strong>Deploy</strong>.</li>
+        </ol>
+
+        <div class="form-group">
+          <label class="form-label">Paste Your Deployed Web App URL (ends in /exec)</label>
+          <input type="text" class="form-input" id="input-new-gas-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="$('#modal-bridge-help').hide()">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-new-gas-url">Save URL &amp; Load Folder</button>
       </div>
     </div>
   </div>
@@ -1233,7 +1376,7 @@
           <label class="form-label">Google API / Developer Key (Optional)</label>
           <input type="text" class="form-input" id="cfg-api-key" placeholder="AIzaSy...">
           <div class="form-hint">
-            Used by Google Picker API for enhanced folder dialog browsing.
+            Enables direct Google Drive API v3 recursive folder queries as a fallback.
           </div>
         </div>
 
@@ -1263,11 +1406,12 @@
 
     const DEFAULT_GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzadHLrOFoiZfPf0GiWK8zIIt5yEiN7kPIgoMBM1Yl267ApwX0k74RlH2DMvzv7n9Lg/exec";
 
-    // Demo publications for zero-friction testing
+    // Demo publications with sample categories
     const DEMO_PUBLICATIONS = [
       {
         id: "demo-pdf-1",
         name: "Trace: Design Systems & Architecture Magazine.pdf",
+        category: "Architecture & Design",
         sizeBytes: 1540000,
         updatedAt: new Date().toISOString(),
         thumbnailLink: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80",
@@ -1276,6 +1420,7 @@
       {
         id: "demo-pdf-2",
         name: "Horizon: Science & Modern Astrophysics.pdf",
+        category: "Science & Tech",
         sizeBytes: 2840000,
         updatedAt: new Date(Date.now() - 86400000).toISOString(),
         thumbnailLink: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=400&q=80",
@@ -1284,9 +1429,19 @@
       {
         id: "demo-pdf-3",
         name: "Monochrome: Photography & Typography Annual.pdf",
+        category: "Photography",
         sizeBytes: 3120000,
         updatedAt: new Date(Date.now() - 172800000).toISOString(),
         thumbnailLink: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80",
+        directUrl: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf"
+      },
+      {
+        id: "demo-pdf-4",
+        name: "Quarterly Financial Analysis & Global Trends.pdf",
+        category: "Reports / Financial",
+        sizeBytes: 2150000,
+        updatedAt: new Date(Date.now() - 250000000).toISOString(),
+        thumbnailLink: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80",
         directUrl: "https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf"
       }
     ];
@@ -1297,10 +1452,13 @@
     let appConfig = loadAppConfig();
     let currentFolder = null;
     let folderFiles = [];
+    let folderCategories = [];
+    let activeCategory = 'all';
     let currentReadingDoc = null;
     let activePdfInstance = null;
     let renderedPageSet = new Set();
     let toastTimeout = null;
+    let pendingRetryFolderId = null;
 
     // Google API / OAuth State
     let googleAccessToken = null;
@@ -1402,7 +1560,7 @@
       statusLayer.style.opacity = '1';
       spinner.style.display = 'none';
       statusMsg.innerHTML = `
-        <div style="color: #ef4444; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Operation Error</div>
+        <div style="color: #ef4444; font-size: 16px; font-weight: 600; margin-bottom: 8px;">Operation Notice</div>
         <div>${html}</div>
         <div style="margin-top: 20px;">
           <button class="btn btn-secondary btn-sm" onclick="hideStatus()">Dismiss</button>
@@ -1468,11 +1626,18 @@
       return uint8;
     }
 
+    function showBridgeUpdateModal(folderId) {
+      pendingRetryFolderId = folderId;
+      hideStatus();
+      $('#input-new-gas-url').val(appConfig.gasEndpoint || DEFAULT_GAS_ENDPOINT);
+      $('#modal-bridge-help').css('display', 'flex');
+    }
+
     // ==========================================
-    // GOOGLE DRIVE LINKER & FETCHER
+    // GOOGLE DRIVE LINKER & RECURSIVE FETCHER
     // ==========================================
     async function loadFolderCatalogue(folderId, folderName = null) {
-      showStatus('Fetching publications from Google Drive folder...');
+      showStatus('Scanning Google Drive folder &amp; subfolders...');
       try {
         const gasUrl = appConfig.gasEndpoint || DEFAULT_GAS_ENDPOINT;
         const targetUrl = `${gasUrl}?action=list&folderId=${encodeURIComponent(folderId)}`;
@@ -1480,20 +1645,41 @@
         const resp = await fetch(targetUrl);
         const data = await resp.json();
 
+        // Detect legacy Apps Script deployment that lacks 'action=list' / 'folderId'
         if (data.status === 'error') {
+          const msg = (data.message || '').toLowerCase();
+          if (msg.includes("'id' parameter") || msg.includes("missing 'id'") || msg.includes("unrecognized action")) {
+            showBridgeUpdateModal(folderId);
+            return;
+          }
           throw new Error(data.message || 'Failed to retrieve folder contents.');
         }
 
-        const name = folderName || data.folderName || 'Google Drive Folder';
+        const name = folderName || data.folderName || 'Google Drive Collection';
         const files = data.files || [];
 
         currentFolder = { id: folderId, name: name, count: files.length };
         folderFiles = files;
+        activeCategory = 'all';
+
+        // Extract categories summary
+        if (data.categories && Array.isArray(data.categories)) {
+          folderCategories = data.categories;
+        } else {
+          // Derive categories from files
+          const catMap = {};
+          files.forEach(f => {
+            const c = f.category || 'Main';
+            catMap[c] = (catMap[c] || 0) + 1;
+          });
+          folderCategories = Object.keys(catMap).map(c => ({ name: c, count: catMap[c] }));
+        }
 
         // Persist active folder
         localStorage.setItem(STORAGE_KEY_FOLDER, JSON.stringify(currentFolder));
         updateHeaderFolderDisplay(name, files.length);
 
+        renderCategoryChips(folderCategories);
         renderContinueShelf();
         renderCatalogueGrid(folderFiles);
 
@@ -1501,23 +1687,108 @@
         hideStatus();
 
       } catch (err) {
+        // Fallback: If user has API Key or OAuth token, try direct Drive API v3 recursive fetch
+        if (googleAccessToken || appConfig.apiKey) {
+          try {
+            showStatus('Trying direct Drive API v3 recursive fetch...');
+            const v3Files = [];
+            const v3CatMap = {};
+            await fetchDriveV3Recursively(folderId, 'Main', v3Files, v3CatMap, 0);
+
+            if (v3Files.length > 0) {
+              const name = folderName || 'Google Drive Folder';
+              currentFolder = { id: folderId, name: name, count: v3Files.length };
+              folderFiles = v3Files;
+              folderCategories = Object.keys(v3CatMap).map(c => ({ name: c, count: v3CatMap[c] }));
+              activeCategory = 'all';
+
+              localStorage.setItem(STORAGE_KEY_FOLDER, JSON.stringify(currentFolder));
+              updateHeaderFolderDisplay(name, v3Files.length);
+              renderCategoryChips(folderCategories);
+              renderContinueShelf();
+              renderCatalogueGrid(folderFiles);
+              $('#hero-linker-box').hide();
+              hideStatus();
+              return;
+            }
+          } catch (v3Err) {
+            console.warn("Drive v3 fallback failed:", v3Err);
+          }
+        }
+
         showErrorStatus(`
-          <strong>Could not load Google Drive folder</strong><br><br>
+          <strong>Could not scan Google Drive folder</strong><br><br>
           ${escapeHtml(err.message)}<br><br>
           <span style="font-size: 13px; color: #cbd5e1;">
-            Ensure the folder sharing permission is set to <strong>"Anyone with the link can view"</strong>, 
-            and your Google Apps Script Web App is deployed with access set to <strong>"Anyone"</strong>.
+            Ensure folder sharing is set to <strong>"Anyone with the link can view"</strong>, 
+            and your Google Apps Script Web App has the latest recursive bridge code deployed with access set to <strong>"Anyone"</strong>.
           </span>
+          <div style="margin-top: 14px;">
+            <button class="btn btn-primary btn-sm" onclick="showBridgeUpdateModal('${escapeJs(folderId)}')">
+              View Bridge Setup Guide
+            </button>
+          </div>
         `);
+      }
+    }
+
+    // Direct Google Drive API v3 Recursive Fetcher Fallback
+    async function fetchDriveV3Recursively(folderId, categoryName, filesList, catMap, depth) {
+      if (depth > 6 || filesList.length >= 800) return;
+      const headers = {};
+      if (googleAccessToken) headers['Authorization'] = `Bearer ${googleAccessToken}`;
+
+      const keyParam = appConfig.apiKey ? `&key=${encodeURIComponent(appConfig.apiKey)}` : '';
+      const query = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
+      const fields = encodeURIComponent('files(id,name,mimeType,thumbnailLink,size,modifiedTime,webViewLink)');
+      const url = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=${fields}&pageSize=1000${keyParam}`;
+
+      const resp = await fetch(url, { headers });
+      const data = await resp.json();
+
+      if (data.files && Array.isArray(data.files)) {
+        for (const item of data.files) {
+          const isPdf = item.mimeType === 'application/pdf' || 
+                        item.mimeType === 'application/x-pdf' || 
+                        item.name.toLowerCase().endsWith('.pdf');
+
+          if (isPdf) {
+            catMap[categoryName] = (catMap[categoryName] || 0) + 1;
+            filesList.push({
+              id: item.id,
+              name: item.name,
+              category: categoryName,
+              sizeBytes: item.size ? parseInt(item.size, 10) : 0,
+              updatedAt: item.modifiedTime || new Date().toISOString(),
+              mimeType: item.mimeType,
+              thumbnailLink: item.thumbnailLink || `https://drive.google.com/thumbnail?id=${item.id}&sz=w400`,
+              webViewLink: item.webViewLink || `https://drive.google.com/file/d/${item.id}/view`
+            });
+          } else if (item.mimeType === 'application/vnd.google-apps.folder') {
+            const nextCat = (categoryName === 'Main') ? item.name : `${categoryName} / ${item.name}`;
+            await fetchDriveV3Recursively(item.id, nextCat, filesList, catMap, depth + 1);
+          }
+        }
       }
     }
 
     function loadDemoLibrary() {
       currentFolder = { id: 'demo-library', name: 'FlipDrive Demo Collection', count: DEMO_PUBLICATIONS.length };
       folderFiles = [...DEMO_PUBLICATIONS];
+      activeCategory = 'all';
+
+      // Build categories from demo files
+      const catMap = {};
+      folderFiles.forEach(f => {
+        const c = f.category || 'Main';
+        catMap[c] = (catMap[c] || 0) + 1;
+      });
+      folderCategories = Object.keys(catMap).map(c => ({ name: c, count: catMap[c] }));
+
       localStorage.setItem(STORAGE_KEY_FOLDER, JSON.stringify(currentFolder));
       updateHeaderFolderDisplay(currentFolder.name, folderFiles.length);
 
+      renderCategoryChips(folderCategories);
       renderContinueShelf();
       renderCatalogueGrid(folderFiles);
       $('#hero-linker-box').hide();
@@ -1527,6 +1798,58 @@
     function updateHeaderFolderDisplay(name, count) {
       $('#hdr-folder-name').text(`${name} (${count})`);
       $('#hdr-folder-name').attr('title', `${name} - ${count} publications`);
+    }
+
+    // ==========================================
+    // CATEGORY RENDERING & FILTERING
+    // ==========================================
+    function renderCategoryChips(categories) {
+      const container = $('#category-chips-container');
+      container.empty();
+
+      if (!categories || categories.length <= 1) {
+        $('#category-filter-bar').hide();
+        return;
+      }
+
+      // Total count across all categories
+      const totalCount = folderFiles.length;
+
+      // 1. "All" chip
+      const allChip = $(`
+        <button class="category-chip ${activeCategory === 'all' ? 'active' : ''}" data-category="all">
+          All
+          <span class="category-count">${totalCount}</span>
+        </button>
+      `);
+      container.append(allChip);
+
+      // 2. Individual subfolder category chips
+      categories.forEach(cat => {
+        const chip = $(`
+          <button class="category-chip ${activeCategory === cat.name ? 'active' : ''}" data-category="${escapeHtml(cat.name)}">
+            ${escapeHtml(cat.name)}
+            <span class="category-count">${cat.count}</span>
+          </button>
+        `);
+        container.append(chip);
+      });
+
+      $('#category-filter-bar').show();
+    }
+
+    $(document).on('click', '.category-chip', function() {
+      activeCategory = $(this).attr('data-category');
+      $('.category-chip').removeClass('active');
+      $(this).addClass('active');
+      filterAndSortFiles();
+    });
+
+    function selectCategory(categoryName) {
+      activeCategory = categoryName;
+      $('.category-chip').removeClass('active');
+      $(`.category-chip[data-category="${categoryName}"]`).addClass('active');
+      filterAndSortFiles();
     }
 
     // ==========================================
@@ -1594,7 +1917,7 @@
               <polyline points="14 2 14 8 20 8"/>
             </svg>
             <p style="font-size: 16px; font-weight: 500; color: #e2e8f0; margin-bottom: 6px;">No PDF publications found</p>
-            <p style="font-size: 13px;">This Google Drive folder does not have any PDF files or matching search results.</p>
+            <p style="font-size: 13px;">No matching PDF files found in this category or search query.</p>
           </div>
         `);
         return;
@@ -1620,6 +1943,7 @@
         const thumbSrc = file.thumbnailLink || `https://drive.google.com/thumbnail?id=${file.id}&sz=w400`;
         const sizeText = file.sizeBytes ? formatBytes(file.sizeBytes) : 'PDF Document';
         const dateText = file.updatedAt ? new Date(file.updatedAt).toLocaleDateString() : '';
+        const categoryName = file.category || 'Main';
 
         const card = $(`
           <div class="book-card" data-id="${file.id}">
@@ -1641,6 +1965,9 @@
             </div>
 
             <div class="book-body">
+              <div class="card-category-tag" title="Subfolder: ${escapeHtml(categoryName)}" onclick="event.stopPropagation(); selectCategory('${escapeJs(categoryName)}')">
+                📁 ${escapeHtml(categoryName)}
+              </div>
               <h3 class="book-title" title="${escapeHtml(file.name)}" onclick="openReader('${file.id}', '${escapeJs(file.name)}', ${hasProgress ? progress.currentPage : 1})">
                 ${escapeHtml(file.name)}
               </h3>
@@ -1679,7 +2006,11 @@
       const query = ($('#catalogue-search').val() || '').toLowerCase().trim();
       const sortBy = $('#catalogue-sort').val();
 
-      let filtered = folderFiles.filter(f => f.name.toLowerCase().includes(query));
+      let filtered = folderFiles.filter(f => {
+        const matchesSearch = f.name.toLowerCase().includes(query) || (f.category && f.category.toLowerCase().includes(query));
+        const matchesCategory = (activeCategory === 'all') || (f.category === activeCategory);
+        return matchesSearch && matchesCategory;
+      });
 
       const allProgress = getAllReadingProgress();
 
@@ -1691,6 +2022,11 @@
         }
         if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
         if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
+        if (sortBy === 'category') {
+          const catComp = (a.category || '').localeCompare(b.category || '');
+          if (catComp !== 0) return catComp;
+          return a.name.localeCompare(b.name);
+        }
         if (sortBy === 'date-desc') return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
         if (sortBy === 'size-desc') return (b.sizeBytes || 0) - (a.sizeBytes || 0);
         return 0;
@@ -1993,6 +2329,7 @@
 
       // Refresh catalogue & resume shelf with updated pages
       renderContinueShelf();
+      renderCategoryChips(folderCategories);
       renderCatalogueGrid(folderFiles);
 
       // Clean URL back to catalogue
@@ -2187,6 +2524,129 @@
     $('#nav-brand').on('click', () => {
       if ($('#view-reader').is(':visible')) {
         exitReader();
+      }
+    });
+
+    // Bridge update copy helper
+    const BRIDGE_SOURCE_CODE = `function doGet(e) {
+  try {
+    var params = (e && e.parameter) ? e.parameter : {};
+    var action = params.action;
+    if (!action) {
+      if (params.folderId || params.folder) action = 'list';
+      else if (params.id) action = 'get';
+    }
+
+    if (action === 'list' || params.folderId || params.folder) {
+      var folderId = params.folderId || params.folder;
+      var rootFolder = DriveApp.getFolderById(folderId);
+      var filesList = [];
+      var categoryStats = {};
+
+      function scanFolder(currentFolder, categoryPath, depth) {
+        if (depth > 6 || filesList.length >= 1000) return;
+        var catName = categoryPath || "Main";
+        if (!categoryStats[catName]) categoryStats[catName] = 0;
+
+        var filesIter = currentFolder.getFiles();
+        while (filesIter.hasNext() && filesList.length < 1000) {
+          try {
+            var file = filesIter.next();
+            var fileName = file.getName();
+            var mime = file.getMimeType();
+            var isPdf = (mime === MimeType.PDF) || (mime === 'application/x-pdf') || (fileName.toLowerCase().slice(-4) === '.pdf');
+            if (isPdf) {
+              var fId = file.getId();
+              categoryStats[catName]++;
+              filesList.push({
+                id: fId,
+                name: fileName,
+                category: catName,
+                sizeBytes: file.getSize(),
+                updatedAt: file.getLastUpdated().toISOString(),
+                mimeType: mime,
+                thumbnailLink: "https://drive.google.com/thumbnail?id=" + fId + "&sz=w400",
+                webViewLink: file.getUrl()
+              });
+            }
+          } catch(e) {}
+        }
+
+        var subFoldersIter = currentFolder.getFolders();
+        while (subFoldersIter.hasNext() && filesList.length < 1000) {
+          try {
+            var subFolder = subFoldersIter.next();
+            var subName = subFolder.getName();
+            var nextCat = (catName === "Main") ? subName : (catName + " / " + subName);
+            scanFolder(subFolder, nextCat, depth + 1);
+          } catch(e) {}
+        }
+      }
+
+      scanFolder(rootFolder, "Main", 0);
+
+      var categoriesSummary = [];
+      for (var cat in categoryStats) {
+        if (categoryStats.hasOwnProperty(cat) && categoryStats[cat] > 0) {
+          categoriesSummary.push({ name: cat, count: categoryStats[cat] });
+        }
+      }
+
+      filesList.sort(function(a, b) { return a.name.localeCompare(b.name); });
+
+      var output = ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        folderId: folderId,
+        folderName: rootFolder.getName(),
+        totalFiles: filesList.length,
+        categories: categoriesSummary,
+        files: filesList
+      }));
+      output.setMimeType(ContentService.MimeType.JSON);
+      return output;
+    }
+
+    if (action === 'get' || params.id) {
+      var file = DriveApp.getFileById(params.id);
+      var blob = file.getBlob();
+      var bytes = blob.getBytes();
+      var output = ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        id: params.id,
+        name: file.getName(),
+        sizeBytes: bytes.length,
+        mimeType: blob.getContentType(),
+        base64: Utilities.base64Encode(bytes)
+      }));
+      output.setMimeType(ContentService.MimeType.JSON);
+      return output;
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Unknown action" })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+
+    $('#btn-copy-bridge-code').on('click', function() {
+      navigator.clipboard.writeText(BRIDGE_SOURCE_CODE).then(() => {
+        $(this).text('✓ Code Copied to Clipboard!');
+        setTimeout(() => $(this).text('📋 Copy Updated Bridge Code'), 3000);
+      }).catch(() => {
+        alert('Please copy the code from GoogleAppsScript_Bridge.js in your repository.');
+      });
+    });
+
+    $('#btn-save-new-gas-url').on('click', function() {
+      const newUrl = $('#input-new-gas-url').val().trim();
+      if (!newUrl) {
+        alert('Please enter your Web App URL (ends in /exec).');
+        return;
+      }
+      saveAppConfig({ gasEndpoint: newUrl });
+      $('#modal-bridge-help').hide();
+      if (pendingRetryFolderId) {
+        loadFolderCatalogue(pendingRetryFolderId);
       }
     });
 

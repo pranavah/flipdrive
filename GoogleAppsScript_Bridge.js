@@ -10,7 +10,7 @@
  * 6. Copy the Web app URL (ends in /exec).
  *
  * Supported Actions:
- * - action=list & folderId=... : Lists all PDF files in the specified folder with thumbnails & metadata
+ * - action=list & folderId=... : Recursively lists all PDF files in folder and subfolders with categories, thumbnails & metadata
  * - action=get & id=... (or ?id=...) : Streams binary base64 data of a PDF file
  */
 
@@ -33,7 +33,7 @@ function doGet(e) {
       }
     }
 
-    // 1. LIST PDF FILES IN FOLDER
+    // 1. RECURSIVE LIST OF PDF FILES IN FOLDER & SUBFOLDERS
     if (action === 'list' || params.folderId || params.folder) {
       var folderId = params.folderId || params.folder;
       if (!folderId) {
@@ -43,9 +43,9 @@ function doGet(e) {
         });
       }
 
-      var folder;
+      var rootFolder;
       try {
-        folder = DriveApp.getFolderById(folderId);
+        rootFolder = DriveApp.getFolderById(folderId);
       } catch (fErr) {
         return createJsonResponse({ 
           status: "error", 
@@ -53,24 +53,90 @@ function doGet(e) {
         });
       }
 
-      var filesIterator = folder.getFilesByType(MimeType.PDF);
       var filesList = [];
-      
-      while (filesIterator.hasNext()) {
-        var file = filesIterator.next();
-        var fId = file.getId();
-        filesList.push({
-          id: fId,
-          name: file.getName(),
-          sizeBytes: file.getSize(),
-          updatedAt: file.getLastUpdated().toISOString(),
-          mimeType: file.getMimeType(),
-          thumbnailLink: "https://drive.google.com/thumbnail?id=" + fId + "&sz=w400",
-          webViewLink: file.getUrl()
-        });
+      var categoryStats = {};
+      var maxDepth = 6;
+      var maxFiles = 1000;
+
+      // Recursive scanner for folder and its subfolders
+      function scanFolder(currentFolder, categoryPath, currentDepth) {
+        if (currentDepth > maxDepth || filesList.length >= maxFiles) return;
+
+        var catName = categoryPath || "Main";
+        if (!categoryStats[catName]) {
+          categoryStats[catName] = 0;
+        }
+
+        // A. Process files in current folder
+        try {
+          var filesIter = currentFolder.getFiles();
+          while (filesIter.hasNext() && filesList.length < maxFiles) {
+            try {
+              var file = filesIter.next();
+              var fileName = file.getName();
+              var mime = file.getMimeType();
+
+              // Match PDF by MIME or extension
+              var isPdf = (mime === MimeType.PDF) || 
+                          (mime === 'application/x-pdf') || 
+                          (mime === 'application/acrobat') ||
+                          (fileName.toLowerCase().slice(-4) === '.pdf');
+
+              if (isPdf) {
+                var fId = file.getId();
+                categoryStats[catName]++;
+                filesList.push({
+                  id: fId,
+                  name: fileName,
+                  category: catName,
+                  sizeBytes: file.getSize(),
+                  updatedAt: file.getLastUpdated().toISOString(),
+                  mimeType: mime,
+                  thumbnailLink: "https://drive.google.com/thumbnail?id=" + fId + "&sz=w400",
+                  webViewLink: file.getUrl()
+                });
+              }
+            } catch (fileErr) {
+              // Ignore individual unreadable file and continue
+            }
+          }
+        } catch (filesErr) {
+          // Folder files access error
+        }
+
+        // B. Process subfolders recursively
+        try {
+          var subFoldersIter = currentFolder.getFolders();
+          while (subFoldersIter.hasNext() && filesList.length < maxFiles) {
+            try {
+              var subFolder = subFoldersIter.next();
+              var subName = subFolder.getName();
+              var nextCat = (catName === "Main") ? subName : (catName + " / " + subName);
+              scanFolder(subFolder, nextCat, currentDepth + 1);
+            } catch (subErr) {
+              // Ignore inaccessible subfolder
+            }
+          }
+        } catch (foldersErr) {
+          // Subfolder iterator error
+        }
       }
 
-      // Sort alphabetically by filename
+      // Start recursive scan from root folder
+      scanFolder(rootFolder, "Main", 0);
+
+      // Format category summary
+      var categoriesSummary = [];
+      for (var cat in categoryStats) {
+        if (categoryStats.hasOwnProperty(cat) && categoryStats[cat] > 0) {
+          categoriesSummary.push({
+            name: cat,
+            count: categoryStats[cat]
+          });
+        }
+      }
+
+      // Sort files alphabetically by name
       filesList.sort(function(a, b) {
         return a.name.localeCompare(b.name);
       });
@@ -78,13 +144,14 @@ function doGet(e) {
       return createJsonResponse({
         status: "success",
         folderId: folderId,
-        folderName: folder.getName(),
+        folderName: rootFolder.getName(),
         totalFiles: filesList.length,
+        categories: categoriesSummary,
         files: filesList
       });
     }
 
-    // 2. GET FILE BY ID (BASE64 STREAM)
+    // 2. GET FILE BY ID (BASE64 BINARY STREAM)
     if (action === 'get' || params.id) {
       var fileId = params.id;
       if (!fileId) {

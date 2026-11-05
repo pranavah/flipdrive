@@ -1,8 +1,8 @@
 # 📖 FlipDrive
 
-> Turn any Google Drive Folder or PDF into a responsive, zero-storage 3D e-magazine catalogue and flipbook reader with automatic reading progress resumption.
+> Turn any Google Drive Folder or PDF into a responsive, zero-storage 3D e-magazine catalogue and flipbook reader with recursive subfolder categories and automatic reading progress resumption.
 
-FlipDrive is a lightweight, responsive web application that connects directly to Google Drive. It allows users to link any folder of their choosing, automatically parses and indexes all PDF publications inside it, presents an interactive catalogue with live cover thumbnails and reading progress indicators, and opens publications in a realistic 3D flipbook reader with smooth page-curl physics and automatic progress bookmarking.
+FlipDrive is a lightweight, responsive web application that connects directly to Google Drive. It allows users to link any folder of their choosing, automatically parses and recursively indexes all PDF publications inside it (including nested subfolders mapped directly to categories), presents an interactive categorized catalogue with live cover thumbnails and reading progress indicators, and opens publications in a realistic 3D flipbook reader with smooth page-curl physics and automatic progress bookmarking.
 
 ---
 
@@ -12,10 +12,16 @@ FlipDrive is a lightweight, responsive web application that connects directly to
   1. **Direct Folder Link or ID:** Simply paste the share link of any folder (`https://drive.google.com/drive/folders/...`).
   2. **Google OAuth 2.0 & Drive Picker:** Sign in with Google and browse/select any folder interactively via Google's native Folder Picker dialog.
   3. **Instant Demo Collection:** Test the catalogue and reader with one click using curated public domain publications.
-- **📚 Rich PDF Catalogue:** Automatically fetches all PDF files in the selected folder and displays:
+- **🗂️ Recursive Subfolder Indexing & Categories:**
+  - Recursively discovers all PDF files across the main folder and any depth of subfolders.
+  - Automatically maps subfolders into **interactive category chips** (`All`, `Main`, `Category A`, `Category B / Subcategory`).
+  - Category tags on each publication card for 1-click filtering.
+  - Real-time search across publication titles and category names.
+  - Category / Subfolder grouping and sorting option.
+- **📚 Rich PDF Catalogue:**
   - High-resolution cover thumbnails with automatic dynamic fallback covers.
   - Publication title, file size (MB/KB), and last updated timestamps.
-  - Real-time title search and multi-criteria sorting (Recently Read, Name A–Z, Name Z–A, Date Modified, File Size).
+  - Real-time title search and multi-criteria sorting (Recently Read, Category, Name A–Z, Name Z–A, Date Modified, File Size).
   - Visual status badges: `Unread`, `Page X / Y (Z%)`, and `Completed ✓`.
 - **📖 Smart Reading Resumption:** Remembers where the user left off across browser sessions using `localStorage`:
   - Visual progress bar and resume button right on each catalogue card (`Resume (p. 14)`).
@@ -33,70 +39,17 @@ FlipDrive is a lightweight, responsive web application that connects directly to
 
 Because Google Drive restricts raw cross-origin binary downloads and folder indexing from external client scripts, a Google Apps Script Web App serves as a zero-cost private bridge.
 
-1. Go to [script.google.com](https://script.google.com/) and click **New project**.
-2. Replace the contents of `Code.gs` with the script from [`GoogleAppsScript_Bridge.js`](GoogleAppsScript_Bridge.js):
-   ```javascript
-   function doGet(e) {
-     try {
-       var params = (e && e.parameter) ? e.parameter : {};
-       var action = params.action;
-       if (!action) {
-         if (params.folderId || params.folder) action = 'list';
-         else if (params.id) action = 'get';
-       }
-
-       // 1. List all PDF files in folder
-       if (action === 'list' || params.folderId) {
-         var folderId = params.folderId || params.folder;
-         var folder = DriveApp.getFolderById(folderId);
-         var filesIterator = folder.getFilesByType(MimeType.PDF);
-         var files = [];
-         while (filesIterator.hasNext()) {
-           var f = filesIterator.next();
-           files.push({
-             id: f.getId(),
-             name: f.getName(),
-             sizeBytes: f.getSize(),
-             updatedAt: f.getLastUpdated().toISOString(),
-             thumbnailLink: "https://drive.google.com/thumbnail?id=" + f.getId() + "&sz=w400"
-           });
-         }
-         var output = ContentService.createTextOutput(JSON.stringify({
-           status: "success",
-           folderId: folderId,
-           folderName: folder.getName(),
-           files: files
-         }));
-         output.setMimeType(ContentService.MimeType.JSON);
-         return output;
-       }
-
-       // 2. Stream single file binary
-       var file = DriveApp.getFileById(params.id);
-       var blob = file.getBlob();
-       var bytes = blob.getBytes();
-       var output = ContentService.createTextOutput(JSON.stringify({
-         status: "success",
-         id: params.id,
-         name: file.getName(),
-         sizeBytes: bytes.length,
-         base64: Utilities.base64Encode(bytes)
-       }));
-       output.setMimeType(ContentService.MimeType.JSON);
-       return output;
-     } catch (err) {
-       var errOutput = ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }));
-       errOutput.setMimeType(ContentService.MimeType.JSON);
-       return errOutput;
-     }
-   }
-   ```
-3. Click **Deploy** $\rightarrow$ **New deployment**.
+1. Go to [script.google.com](https://script.google.com/) and click **New project** (or open your existing project).
+2. Replace all contents of `Code.gs` with the code from [`GoogleAppsScript_Bridge.js`](GoogleAppsScript_Bridge.js).
+3. Click **Deploy** $\rightarrow$ **Manage deployments** $\rightarrow$ **Edit (pencil icon)**.
+   - If deploying for the first time, click **Deploy** $\rightarrow$ **New deployment** $\rightarrow$ select **Web app**.
 4. Configure the settings:
-   - **Select type:** Web app (gear icon)
+   - **Version:** Select **New version** (Crucial: Google requires a new version for code changes to take effect)
    - **Execute as:** `Me (your-email@gmail.com)`
    - **Who has access:** `Anyone` *(Crucial: Do not select "Only myself" or "Anyone with a Google account")*
-5. Click **Deploy**, approve permissions, and copy the **Web app URL** (ends in `/exec`).
+5. Click **Deploy**, approve permissions if prompted, and copy the **Web app URL** (ends in `/exec`).
+
+> **Tip:** In FlipDrive, you can paste this URL into the **Settings (⚙)** modal or the **Bridge Update** prompt at any time to immediately connect your Drive library.
 
 ---
 
@@ -111,7 +64,7 @@ Because Google Drive restricts raw cross-origin binary downloads and folder inde
 3. Commit and push:
    ```bash
    git add index.html GoogleAppsScript_Bridge.js readme.md
-   git commit -m "feat: google drive folder linker, pdf catalogue, and reading resumption"
+   git commit -m "feat: recursive subfolders as categories and enhanced gas bridge"
    git push
    ```
 4. Enable GitHub Pages in your repository:
@@ -122,15 +75,15 @@ Because Google Drive restricts raw cross-origin binary downloads and folder inde
 
 ## 📁 Linking a Google Drive Folder
 
-1. Open your Google Drive, right-click the folder containing your PDFs, and select **Share** $\rightarrow$ set access to **"Anyone with the link can view"**.
+1. Open your Google Drive, right-click the folder containing your PDFs and subfolders, and select **Share** $\rightarrow$ set access to **"Anyone with the link can view"**.
 2. Copy the folder link:
    ```text
-   https://drive.google.com/drive/folders/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs?usp=sharing
+   https://drive.google.com/drive/folders/18QEJunaB1jtsFct9FBnOduENWIDlZUE3?usp=sharing
    ```
 3. In FlipDrive:
    - Click **"Link Folder"** in the top navigation or click **"Paste Folder Link"**.
    - Paste the folder URL or ID and click **"Fetch PDF Catalogue"**.
-   - FlipDrive instantly loads all PDFs into your catalogue and saves the folder for your next visit!
+   - FlipDrive recursively traverses all subfolders, categorizes them, and renders your library!
 
 ---
 
@@ -150,7 +103,7 @@ You can link directly to specific folders or publications:
 
 | Parameter | Example | Purpose |
 | :--- | :--- | :--- |
-| `?folder=FOLDER_ID` | `index.html?folder=1BxiMVs...` | Opens catalogue directly for that folder. |
+| `?folder=FOLDER_ID` | `index.html?folder=18QEJunaB1jtsFct9FBnOduENWIDlZUE3` | Opens catalogue directly for that folder. |
 | `?id=FILE_ID` | `index.html?id=1pt1pt...` | Opens reader directly for that publication. |
 | `?id=FILE_ID&page=14` | `index.html?id=1pt1pt...&page=14` | Opens reader directly at Page 14. |
 
@@ -160,7 +113,7 @@ You can link directly to specific folders or publications:
 
 - [Turn.js](http://www.turnjs.com/) – Realistic 3D flipbook animation engine.
 - [PDF.js](https://mozilla.github.io/pdf.js/) – High-DPI browser PDF rendering.
-- [Google Apps Script](https://developers.google.com/apps-script) – Zero-storage binary streaming and folder indexing bridge.
+- [Google Apps Script](https://developers.google.com/apps-script) – Zero-storage binary streaming and recursive folder indexing bridge.
 - [Google Identity Services](https://developers.google.com/identity/gsi/web) – Secure OAuth 2.0 authorization and native Google Picker integration.
 
 ---
