@@ -2131,6 +2131,13 @@
           }
 
           if (data.status === 'error') {
+            if (/exceeds the maximum file size|maximum file size/i.test(data.message || '')) {
+              throw new Error(
+                'This Apps Script deployment is still using the old whole-file download code. ' +
+                'Update Code.gs with the current GoogleAppsScript_Bridge.js, deploy a new version, ' +
+                'and make sure Settings points to that deployment URL.'
+              );
+            }
             throw new Error(data.message || 'Apps Script reported an unspecified error.');
           }
           if (data.status !== 'success') {
@@ -2163,6 +2170,9 @@
           throw new Error(data.warning || 'Apps Script returned neither PDF data nor a download URL.');
         } catch (gasErr) {
           recordFailure('Apps Script bridge', gasErr);
+          if (/old whole-file download code/i.test(getPdfLoadError(gasErr))) {
+            throw gasErr;
+          }
         }
       } else {
         recordFailure('Apps Script bridge', new Error('No bridge URL is configured.'));
