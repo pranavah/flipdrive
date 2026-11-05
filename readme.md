@@ -29,6 +29,7 @@ FlipDrive is a lightweight, responsive web application that connects directly to
   - Automatically turns to the saved page when opened, accompanied by a non-intrusive resume notification toast with a 1-click option to restart at Page 1.
   - Dynamically updates the saved page as the user flips through the book.
 - **✨ Realistic 3D Flipbook:** Page-turning physics, drop shadows, responsive single/double page layout, keyboard shortcuts (`←`/`→`), jump-to-page input, and fullscreen mode.
+- **📄 Flexible Reading Views:** Choose the default Flipbook view from the catalogue, or switch between the 3D flipbook and a page-by-page PDF view while reading.
 - **🚀 Zero Build Step & Zero Hosting Cost:** Works purely with vanilla HTML, CSS, JavaScript, PDF.js, and Turn.js — fully compatible with GitHub Pages or static web servers.
 
 ---

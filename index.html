@@ -660,6 +660,7 @@
     }
 
     .reader-topbar {
+      position: relative;
       height: 56px;
       background: rgba(15, 23, 42, 0.95);
       backdrop-filter: blur(12px);
@@ -668,7 +669,14 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 18px;
-      z-index: 110;
+      z-index: 500;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    #view-reader.reader-topbar-hidden .reader-topbar {
+      opacity: 0;
+      transform: translateY(-100%);
+      pointer-events: none;
     }
 
     .reader-title-box {
@@ -704,6 +712,23 @@
       gap: 10px;
     }
 
+    .reader-mode-toggle,
+    .catalogue-mode-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #cbd5e1;
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .reader-mode-toggle input,
+    .catalogue-mode-toggle input {
+      accent-color: var(--accent-blue);
+      cursor: pointer;
+    }
+
     .jump-page-input {
       width: 50px;
       background: #1e293b;
@@ -722,17 +747,69 @@
     /* Flipbook Stage */
     #reader-stage {
       position: relative;
+      z-index: 1;
       flex: 1;
       width: 100vw;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      overflow: auto;
+    }
+
+    #reader-stage.reader-stage-zoomed {
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
+
+    #flipbook-zoom-wrapper {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: center;
+      margin: auto;
+    }
+
+    #reader-stage.reader-stage-zoomed #flipbook-zoom-wrapper {
+      align-items: flex-start;
+      justify-content: flex-start;
+      margin: 0;
+    }
+
+    #reader-stage.reader-mode-page #flipbook-zoom-wrapper {
+      display: none;
+    }
+
+    .reader-single-page {
+      display: none;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #reader-stage.reader-mode-page .reader-single-page {
+      display: flex;
+    }
+
+    .reader-single-page.zoomed {
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 0;
+    }
+
+    .reader-single-page canvas {
+      display: block;
+      flex: 0 0 auto;
+      background: #fff;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
     }
 
     #flipbook {
       box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
       transition: transform 0.2s ease;
+      transform-origin: center;
     }
 
     .page {
@@ -764,7 +841,7 @@
       gap: 12px;
       color: #fff;
       font-size: 13px;
-      z-index: 120;
+      z-index: 510;
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       backdrop-filter: blur(8px);
     }
@@ -815,7 +892,32 @@
       backdrop-filter: blur(14px);
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-      z-index: 110;
+      z-index: 500;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    @media (max-width: 700px) {
+      #reader-dock {
+        max-width: calc(100vw - 20px);
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding: 7px 10px;
+        gap: 5px;
+      }
+      .dock-btn {
+        flex: 0 0 auto;
+        padding: 7px 10px;
+      }
+      #page-indicator {
+        flex: 0 0 auto;
+        padding: 0 4px;
+      }
+    }
+
+    #view-reader.reader-dock-hidden #reader-dock {
+      opacity: 0;
+      transform: translate(-50%, 20px);
+      pointer-events: none;
     }
 
     .dock-btn {
@@ -839,6 +941,22 @@
     .dock-btn:disabled {
       opacity: 0.3;
       cursor: not-allowed;
+    }
+
+    .reader-page-input {
+      width: 58px;
+      padding: 6px 4px;
+      color: #cbd5e1;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      font: inherit;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+    .reader-page-input:focus {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: 1px;
     }
 
     #page-indicator {
@@ -1176,6 +1294,11 @@
           <option value="size-desc">File Size (Largest)</option>
         </select>
 
+        <label class="catalogue-mode-toggle" title="Choose the default view used when opening publications">
+          <input type="checkbox" id="catalogue-flipbook-mode" checked>
+          Flipbook view
+        </label>
+
         <button class="btn btn-secondary btn-sm" id="btn-refresh-folder" title="Refresh files from Drive">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="23 4 23 10 17 10"/>
@@ -1209,6 +1332,10 @@
       </div>
 
       <div class="reader-controls-right">
+        <label class="reader-mode-toggle" title="Switch between flipbook and page-by-page reading">
+          <input type="checkbox" id="reader-flipbook-mode" checked>
+          Flipbook
+        </label>
         <span style="font-size:12px; color:var(--text-muted)">Jump to:</span>
         <input type="number" id="reader-jump-input" class="jump-page-input" min="1" value="1" title="Type page number and press Enter">
         <button class="btn btn-ghost btn-sm" id="btn-share-reader" title="Copy link to current page">
@@ -1236,16 +1363,27 @@
 
     <!-- Flipbook Stage -->
     <div id="reader-stage">
-      <div id="flipbook"></div>
+      <div id="flipbook-zoom-wrapper">
+        <div id="flipbook"></div>
+      </div>
+      <div class="reader-single-page" id="reader-single-page">
+        <canvas id="reader-single-canvas" aria-label="PDF page"></canvas>
+      </div>
     </div>
 
     <!-- Bottom Dock Controls -->
     <div id="reader-dock">
       <button class="dock-btn" id="btn-first" title="First Page">&laquo;</button>
       <button class="dock-btn" id="btn-prev" title="Previous Page">&lsaquo; Prev</button>
-      <div id="page-indicator"><span id="lbl-curr">1</span> / <span id="lbl-total">-</span></div>
+      <div id="page-indicator">
+        <input type="number" id="reader-page-input" class="reader-page-input" min="1" value="1" aria-label="Go to page">
+        <span> / <span id="lbl-total">-</span></span>
+      </div>
       <button class="dock-btn" id="btn-next" title="Next Page">Next &rsaquo;</button>
       <button class="dock-btn" id="btn-last" title="Last Page">&raquo;</button>
+      <button class="dock-btn" id="btn-zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
+      <button class="dock-btn" id="btn-zoom-reset" title="Reset zoom">100%</button>
+      <button class="dock-btn" id="btn-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
       <button class="dock-btn" id="btn-fullscreen" title="Toggle Fullscreen">&#x26F6;</button>
     </div>
   </div>
@@ -1409,6 +1547,7 @@
     const STORAGE_KEY_PROGRESS = 'flipdrive_reading_progress';
     const STORAGE_KEY_FOLDER = 'flipdrive_active_folder';
     const STORAGE_KEY_CONFIG = 'flipdrive_app_config';
+    const STORAGE_KEY_READER_MODE = 'flipdrive_reader_mode';
 
     const DEFAULT_GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzadHLrOFoiZfPf0GiWK8zIIt5yEiN7kPIgoMBM1Yl267ApwX0k74RlH2DMvzv7n9Lg/exec";
 
@@ -1462,6 +1601,11 @@
     let activeCategory = 'all';
     let currentReadingDoc = null;
     let activePdfInstance = null;
+    let readerZoomLevel = 1;
+    let readerViewMode = 'flipbook';
+    let singlePageRenderTask = null;
+    let singlePageRenderVersion = 0;
+    let currentReaderPage = 1;
     let renderedPageSet = new Set();
     let toastTimeout = null;
     let pendingRetryFolderId = null;
@@ -2076,8 +2220,81 @@
     function resetFlipbookContainer() {
       const stage = $('#reader-stage');
       stage.empty();
-      stage.append('<div id="flipbook"></div>');
+      stage.removeClass('reader-mode-page reader-stage-zoomed');
+      stage.append(
+        '<div id="flipbook-zoom-wrapper"><div id="flipbook"></div></div>' +
+        '<div class="reader-single-page" id="reader-single-page"><canvas id="reader-single-canvas" aria-label="PDF page"></canvas></div>'
+      );
     }
+
+    function getPreferredReaderMode() {
+      return localStorage.getItem(STORAGE_KEY_READER_MODE) === 'page' ? 'page' : 'flipbook';
+    }
+
+    function setReaderViewMode(mode, persist = true) {
+      readerViewMode = mode === 'page' ? 'page' : 'flipbook';
+      const stage = document.getElementById('reader-stage');
+      const flipbookMode = document.getElementById('reader-flipbook-mode');
+      const catalogueMode = document.getElementById('catalogue-flipbook-mode');
+      if (stage) stage.classList.toggle('reader-mode-page', readerViewMode === 'page');
+      if (flipbookMode) flipbookMode.checked = readerViewMode === 'flipbook';
+      if (catalogueMode) catalogueMode.checked = readerViewMode === 'flipbook';
+      if (persist) localStorage.setItem(STORAGE_KEY_READER_MODE, readerViewMode);
+      if (readerViewMode === 'page' && activePdfInstance) {
+        renderSinglePage(currentReaderPage);
+      }
+      updateBrowserUrl(currentReadingDoc?.id, currentReaderPage);
+    }
+
+    async function renderSinglePage(pageNumber) {
+      if (!activePdfInstance || readerViewMode !== 'page') return;
+      const canvas = document.getElementById('reader-single-canvas');
+      const container = document.getElementById('reader-single-page');
+      if (!canvas || !container) return;
+
+      const renderVersion = ++singlePageRenderVersion;
+      if (singlePageRenderTask) {
+        singlePageRenderTask.cancel();
+        singlePageRenderTask = null;
+      }
+
+      try {
+        const page = await activePdfInstance.getPage(pageNumber);
+        if (renderVersion !== singlePageRenderVersion || readerViewMode !== 'page') return;
+        const baseViewport = page.getViewport({ scale: 1 });
+        const availableWidth = Math.max(100, container.clientWidth - 40);
+        const availableHeight = Math.max(100, container.clientHeight - 40);
+        const fitScale = Math.min(availableWidth / baseViewport.width, availableHeight / baseViewport.height);
+        const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+        const cssScale = fitScale * readerZoomLevel;
+        const viewport = page.getViewport({ scale: cssScale * outputScale });
+
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        canvas.style.width = `${Math.ceil(viewport.width / outputScale)}px`;
+        canvas.style.height = `${Math.ceil(viewport.height / outputScale)}px`;
+        container.classList.toggle('zoomed', readerZoomLevel > 1);
+        singlePageRenderTask = page.render({
+          canvasContext: canvas.getContext('2d'),
+          viewport
+        });
+        await singlePageRenderTask.promise;
+        if (renderVersion === singlePageRenderVersion) singlePageRenderTask = null;
+      } catch (error) {
+        if (error?.name !== 'RenderingCancelledException') {
+          console.error(`Single-page render failed for page ${pageNumber}:`, error);
+        }
+      }
+    }
+
+    $('#catalogue-flipbook-mode').prop('checked', getPreferredReaderMode() === 'flipbook')
+      .on('change', function() {
+        localStorage.setItem(STORAGE_KEY_READER_MODE, this.checked ? 'flipbook' : 'page');
+      });
+
+    $('#reader-flipbook-mode').on('change', function() {
+      setReaderViewMode(this.checked ? 'flipbook' : 'page');
+    });
 
     function getPdfLoadError(error) {
       const message = error && (error.message || error.toString());
@@ -2115,6 +2332,7 @@
             const buf = await resp.arrayBuffer();
             const bytes = new Uint8Array(buf);
             if (isPdfBytes(bytes)) {
+              showStatus(`Download complete (${formatBytes(bytes.length)}). Preparing PDF for reading...`);
               return await pdfjsLib.getDocument({ data: bytes }).promise;
             }
             throw new Error('Drive API returned a response that is not a PDF.');
@@ -2167,11 +2385,16 @@
           }
 
           if (data.chunked) {
-            showStatus('Downloading publication in secure chunks...');
+            const fileSize = Number(data.sizeBytes) || 0;
+            const largeFileNotice = fileSize > 30 * 1024 * 1024
+              ? `This PDF is larger than 30 MB (${formatBytes(fileSize)}) and may take longer to open. `
+              : '';
+            showStatus(`${largeFileNotice}Preparing secure download... 0 B / ${formatBytes(fileSize)} (0%)`);
             const pdfBytes = await fetchPdfInChunks(gasUrl, fileId, data);
             if (!isPdfBytes(pdfBytes)) {
               throw new Error('Chunked download did not produce a PDF.');
             }
+            showStatus(`Download complete (${formatBytes(pdfBytes.length)}). Preparing PDF for reading...`);
             return await pdfjsLib.getDocument({ data: pdfBytes }).promise;
           }
 
@@ -2181,6 +2404,7 @@
             if (!isPdfBytes(pdfBytes)) {
               throw new Error('Apps Script returned data that is not a PDF.');
             }
+            showStatus(`Download complete (${formatBytes(pdfBytes.length)}). Preparing PDF for reading...`);
             return await pdfjsLib.getDocument({ data: pdfBytes }).promise;
           }
           if (data.downloadUrl) {
@@ -2275,7 +2499,8 @@
         }
         pdfBytes.set(chunkBytes, offset);
         offset += chunkBytes.length;
-        showStatus(`Downloading publication... ${Math.round((offset / totalBytes) * 100)}%`);
+        const progress = Math.round((offset / totalBytes) * 100);
+        showStatus(`Downloading publication... ${formatBytes(offset)} / ${formatBytes(totalBytes)} (${progress}%)`);
       }
 
       return pdfBytes;
@@ -2298,6 +2523,7 @@
           if (!isPdfBytes(bytes)) {
             throw new Error('Response was not a PDF.');
           }
+          showStatus(`Download complete (${formatBytes(bytes.length)}). Preparing PDF for reading...`);
           return await pdfjsLib.getDocument({ data: bytes }).promise;
         } catch (error) {
           const detail = getPdfLoadError(error);
@@ -2321,7 +2547,7 @@
       return null;
     }
 
-    async function openReader(fileId, fileName, resumePage = 1) {
+    async function openReader(fileId, fileName, resumePage = 1, requestedMode = null) {
       try {
         $('#view-catalogue').hide();
         $('#view-reader').css('display', 'flex');
@@ -2329,7 +2555,16 @@
         showStatus(`Opening ${fileName || 'publication'}...`);
 
         currentReadingDoc = { id: fileId, name: fileName };
+        currentReaderPage = resumePage || 1;
+        const desiredReaderMode = requestedMode === 'page' || requestedMode === 'flipbook'
+          ? requestedMode
+          : getPreferredReaderMode();
         renderedPageSet.clear();
+        singlePageRenderVersion++;
+        if (singlePageRenderTask) {
+          singlePageRenderTask.cancel();
+          singlePageRenderTask = null;
+        }
 
         // Find file metadata from catalogue
         const fileMeta = folderFiles.find(f => f.id === fileId);
@@ -2358,6 +2593,7 @@
 
         // Initialize Turn.js (single page mode if mobile or single-page doc)
         const displayMode = (isMobile || totalPages === 1) ? 'single' : 'double';
+        readerZoomLevel = 1;
 
         $('#flipbook').turn({
           width: width,
@@ -2373,6 +2609,8 @@
             }
           }
         });
+        updateFlipbookZoom();
+        bindPageSideNavigation(totalPages);
 
         // Determine starting page & resume logic
         const savedProgress = getReadingProgress(fileId);
@@ -2384,6 +2622,7 @@
 
         // Render current & neighbor pages
         renderPageNeighbors(pdf, targetPage, totalPages);
+        currentReaderPage = targetPage;
 
         if (targetPage > 1) {
           $('#flipbook').turn('page', targetPage);
@@ -2392,7 +2631,9 @@
           handlePageTurned(1, totalPages);
         }
 
+        setReaderViewMode(desiredReaderMode);
         bindReaderControls(totalPages);
+        startReaderControlsAutoHide();
         hideStatus();
 
         // Update URL query
@@ -2448,8 +2689,8 @@
     }
 
     function handlePageTurned(page, totalPages) {
-      document.getElementById('lbl-curr').textContent = page;
-      $('#reader-jump-input').val(page);
+      currentReaderPage = page;
+      $('#reader-jump-input, #reader-page-input').val(page);
 
       const percent = totalPages > 0 ? Math.round((page / totalPages) * 100) : 0;
       $('#reader-progress-indicator').text(`Page ${page} of ${totalPages} (${percent}%)`);
@@ -2459,6 +2700,7 @@
       // Lazily render adjacent pages for smooth flips
       if (activePdfInstance) {
         renderPageNeighbors(activePdfInstance, page, totalPages);
+        if (readerViewMode === 'page') renderSinglePage(page);
       }
 
       // Persist reading progress
@@ -2504,12 +2746,23 @@
 
       $('#reader-jump-input').off('keydown').on('keydown', function(e) {
         if (e.key === 'Enter') {
-          const val = parseInt($(this).val(), 10);
-          if (val >= 1 && val <= totalPages) {
-            $('#flipbook').turn('page', val);
-          }
+          jumpToReaderPage(this, totalPages);
         }
+      }).on('change', function() {
+        jumpToReaderPage(this, totalPages);
       });
+      $('#reader-page-input').attr('max', totalPages)
+        .off('keydown change')
+        .on('keydown', function(e) {
+          if (e.key === 'Enter') jumpToReaderPage(this, totalPages);
+        })
+        .on('change', function() {
+          jumpToReaderPage(this, totalPages);
+        });
+
+      $('#btn-zoom-in').off('click').on('click', () => setReaderZoom(readerZoomLevel + 0.2));
+      $('#btn-zoom-out').off('click').on('click', () => setReaderZoom(readerZoomLevel - 0.2));
+      $('#btn-zoom-reset').off('click').on('click', () => setReaderZoom(1));
 
       $(document).off('keydown.reader').on('keydown.reader', (e) => {
         if ($('#view-reader').is(':visible') && !$(e.target).is('input')) {
@@ -2537,10 +2790,120 @@
       });
     }
 
+    function jumpToReaderPage(input, totalPages) {
+      const page = Number(input.value);
+      if (!Number.isInteger(page) || page < 1 || page > totalPages) {
+        input.setCustomValidity(`Enter a page number from 1 to ${totalPages}.`);
+        input.reportValidity();
+        return;
+      }
+
+      input.setCustomValidity('');
+      $('#flipbook').turn('page', page);
+      input.blur();
+    }
+
+    function setReaderZoom(zoomLevel) {
+      readerZoomLevel = Math.min(2, Math.max(0.6, Math.round(zoomLevel * 10) / 10));
+      updateFlipbookZoom();
+    }
+
+    function updateFlipbookZoom() {
+      const dims = getViewportSize();
+      const wrapper = document.getElementById('flipbook-zoom-wrapper');
+      const flipbook = document.getElementById('flipbook');
+      if (!wrapper || !flipbook) return;
+
+      wrapper.style.width = `${Math.round(dims.width * readerZoomLevel)}px`;
+      wrapper.style.height = `${Math.round(dims.height * readerZoomLevel)}px`;
+      flipbook.style.transform = `scale(${readerZoomLevel})`;
+      const zoomed = readerZoomLevel > 1;
+      document.getElementById('reader-stage').classList.toggle('reader-stage-zoomed', zoomed);
+      flipbook.style.transformOrigin = zoomed ? 'top left' : 'center';
+      $('#btn-zoom-reset').text(`${Math.round(readerZoomLevel * 100)}%`);
+      if (readerViewMode === 'page') renderSinglePage(currentReaderPage);
+    }
+
+    let readerTopbarHideTimer = null;
+    let readerDockHideTimer = null;
+    let readerAutoHideInitialized = false;
+
+    function startReaderControlsAutoHide() {
+      const readerView = document.getElementById('view-reader');
+      if (!readerView || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+      readerView.classList.remove('reader-topbar-hidden', 'reader-dock-hidden');
+      clearTimeout(readerTopbarHideTimer);
+      clearTimeout(readerDockHideTimer);
+
+      const hideTopbar = () => readerView.classList.add('reader-topbar-hidden');
+      const hideDock = () => readerView.classList.add('reader-dock-hidden');
+      readerTopbarHideTimer = setTimeout(hideTopbar, 2000);
+      readerDockHideTimer = setTimeout(hideDock, 2000);
+
+      if (readerAutoHideInitialized) return;
+      readerAutoHideInitialized = true;
+
+      document.addEventListener('pointermove', (event) => {
+        if (event.pointerType !== 'mouse') return;
+
+        if (event.clientY <= 80) {
+          clearTimeout(readerTopbarHideTimer);
+          readerView.classList.remove('reader-topbar-hidden');
+        } else if (!readerView.classList.contains('reader-topbar-hidden')) {
+          clearTimeout(readerTopbarHideTimer);
+          readerTopbarHideTimer = setTimeout(hideTopbar, 2000);
+        }
+
+        if (event.clientY >= window.innerHeight - 120) {
+          clearTimeout(readerDockHideTimer);
+          readerView.classList.remove('reader-dock-hidden');
+        } else if (!readerView.classList.contains('reader-dock-hidden')) {
+          clearTimeout(readerDockHideTimer);
+          readerDockHideTimer = setTimeout(hideDock, 2000);
+        }
+      });
+    }
+
+    function bindPageSideNavigation(totalPages) {
+      const flipbook = document.getElementById('flipbook');
+      if (!flipbook) return;
+
+      flipbook.addEventListener('click', function(event) {
+        if (event.button !== 0 || event.detail === 0 || !(event.target instanceof Element)) return;
+        const page = event.target.closest('.page');
+        if (!page || !flipbook.contains(page)) return;
+
+        const rect = page.getBoundingClientRect();
+        const isLeftSide = event.clientX < rect.left + rect.width / 2;
+        const currentPage = $('#flipbook').turn('page');
+        if ((isLeftSide && currentPage <= 1) || (!isLeftSide && currentPage >= totalPages)) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        $('#flipbook').turn(isLeftSide ? 'previous' : 'next');
+      }, true);
+
+      const singlePageCanvas = document.getElementById('reader-single-canvas');
+      singlePageCanvas.addEventListener('click', (event) => {
+        if (readerViewMode !== 'page' || event.button !== 0 || event.detail === 0) return;
+        const rect = singlePageCanvas.getBoundingClientRect();
+        const isLeftSide = event.clientX < rect.left + rect.width / 2;
+        const currentPage = $('#flipbook').turn('page');
+        if ((isLeftSide && currentPage <= 1) || (!isLeftSide && currentPage >= totalPages)) return;
+        $('#flipbook').turn(isLeftSide ? 'previous' : 'next');
+      });
+    }
+
     function exitReader() {
       $('#view-reader').hide();
       $('#view-catalogue').show();
       resetFlipbookContainer();
+      singlePageRenderVersion++;
+      if (singlePageRenderTask) {
+        singlePageRenderTask.cancel();
+        singlePageRenderTask = null;
+      }
       activePdfInstance = null;
       renderedPageSet.clear();
 
@@ -2560,6 +2923,7 @@
         const dims = getViewportSize();
         $('#flipbook').turn('display', dims.isMobile ? 'single' : 'double');
         $('#flipbook').turn('size', dims.width, dims.height);
+        updateFlipbookZoom();
       }
     });
 
@@ -2572,6 +2936,7 @@
       } else {
         url.searchParams.delete('page');
       }
+      url.searchParams.set('mode', readerViewMode);
       history.replaceState(null, '', url.toString());
     }
 
@@ -2989,6 +3354,7 @@ function authorizeBridge() {
       const params = new URLSearchParams(window.location.search);
       const urlFileId = params.get('id');
       const urlPage = parseInt(params.get('page'), 10) || 1;
+      const urlMode = params.get('mode');
       const urlFolderId = params.get('folder');
 
       // Check stored active folder
@@ -3004,7 +3370,7 @@ function authorizeBridge() {
 
       // If a specific document ID is requested in URL, open reader directly
       if (urlFileId) {
-        await openReader(urlFileId, 'Google Drive Publication', urlPage);
+        await openReader(urlFileId, 'Google Drive Publication', urlPage, urlMode);
         return;
       }
 
