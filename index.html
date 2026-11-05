@@ -1323,7 +1323,7 @@
         </div>
 
         <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 14px;">
-          Follow these 3 quick steps to enable recursive folder scanning and subfolder categories:
+          Follow these steps to enable folder scanning and large-PDF downloads:
         </p>
 
         <ol style="font-size: 13px; color: #cbd5e1; margin-left: 20px; line-height: 1.8; margin-bottom: 18px;">
@@ -1333,6 +1333,12 @@
               📋 Copy Updated Bridge Code
             </button>
           </li>
+          <li>In <strong>Project Settings</strong>, enable <strong>Show "appsscript.json" manifest file</strong>. In its <code>oauthScopes</code> array, include:
+            <code>https://www.googleapis.com/auth/drive.readonly</code> and
+            <code>https://www.googleapis.com/auth/script.external_request</code>.
+            The repository's <code>appsscript.json</code> has these scopes; merge them with any existing scopes.
+          </li>
+          <li>Save, select <code>authorizeBridge</code> in the function menu, click <strong>Run</strong>, and approve the requested Drive and external-request permissions.</li>
           <li>Click <strong>Deploy &rarr; Manage deployments &rarr; Edit (pencil icon)</strong>, select <strong>"New version"</strong>, ensure access is <strong>"Anyone"</strong>, and click <strong>Deploy</strong>.</li>
         </ol>
 
@@ -2186,6 +2192,14 @@
           throw new Error(data.warning || 'Apps Script returned neither PDF data nor a download URL.');
         } catch (gasErr) {
           recordFailure('Apps Script bridge', gasErr);
+          if (/permission to call UrlFetchApp\.fetch|script\.external_request/i.test(getPdfLoadError(gasErr))) {
+            throw new Error(
+              'The Apps Script deployment is missing the external-request OAuth scope. ' +
+              'In Apps Script, enable the appsscript.json manifest and add ' +
+              '"https://www.googleapis.com/auth/script.external_request" to oauthScopes. ' +
+              'Save, reauthorize the script, deploy a new version, and retry.'
+            );
+          }
           if (/old whole-file download code/i.test(getPdfLoadError(gasErr))) {
             throw gasErr;
           }
@@ -2921,6 +2935,23 @@
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function authorizeBridge() {
+  DriveApp.getRootFolder().getName();
+  var response = UrlFetchApp.fetch(
+    "https://www.googleapis.com/drive/v3/about?fields=user",
+    {
+      headers: {
+        Authorization: "Bearer " + ScriptApp.getOAuthToken()
+      },
+      muteHttpExceptions: true
+    }
+  );
+  if (response.getResponseCode() !== 200) {
+    throw new Error("Bridge authorization failed (HTTP " + response.getResponseCode() + ").");
+  }
+  return "Drive and external-request permissions are authorized.";
 }`;
 
     $('#btn-copy-bridge-code').on('click', function() {
