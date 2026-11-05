@@ -2137,6 +2137,15 @@
             throw new Error('Apps Script response is missing a success status.');
           }
 
+          if (data.chunked) {
+            showStatus('Downloading publication in secure chunks...');
+            const pdfBytes = await fetchPdfInChunks(gasUrl, fileId, data);
+            if (!isPdfBytes(pdfBytes)) {
+              throw new Error('Chunked download did not produce a PDF.');
+            }
+            return await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+          }
+
           if (data.base64 && data.base64.length > 50) {
             showStatus('Unpacking document bytes...');
             const pdfBytes = base64ToUint8Array(data.base64);
@@ -2171,6 +2180,57 @@
         `All PDF sources failed. Check that the file is a PDF and is accessible to the Apps Script account. ` +
         `For a private file, authorize Google Drive in Settings. ${details}`
       );
+    }
+
+    async function fetchPdfInChunks(gasUrl, fileId, metadata) {
+      const totalBytes = Number(metadata.sizeBytes);
+      const chunkSize = Number(metadata.chunkSize) || 4 * 1024 * 1024;
+      const maxChunkSize = 4 * 1024 * 1024;
+      if (!Number.isSafeInteger(totalBytes) || totalBytes <= 0 ||
+          !Number.isSafeInteger(chunkSize) || chunkSize <= 0 || chunkSize > maxChunkSize) {
+        throw new Error('Apps Script returned invalid chunked-download metadata.');
+      }
+
+      let pdfBytes;
+      try {
+        pdfBytes = new Uint8Array(totalBytes);
+      } catch (allocationError) {
+        throw new Error(`PDF is too large for this browser to load (${totalBytes} bytes).`);
+      }
+
+      for (let offset = 0; offset < totalBytes;) {
+        const length = Math.min(chunkSize, totalBytes - offset);
+        const targetUrl = `${gasUrl}?action=chunk&id=${encodeURIComponent(fileId)}` +
+          `&offset=${offset}&length=${length}`;
+        const response = await fetch(targetUrl);
+        const responseText = await response.text();
+        if (!response.ok) {
+          throw new Error(`Chunk request failed: HTTP ${response.status} ${response.statusText}`);
+        }
+
+        let chunk;
+        try {
+          chunk = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error(`Chunk request returned invalid JSON: ${responseText.slice(0, 160)}`);
+        }
+        if (chunk.status !== 'success' || !chunk.base64) {
+          throw new Error(chunk.message || 'Apps Script did not return the requested file chunk.');
+        }
+        if (Number(chunk.offset) !== offset || Number(chunk.totalBytes) !== totalBytes) {
+          throw new Error('Apps Script returned a chunk for an unexpected file range.');
+        }
+
+        const chunkBytes = base64ToUint8Array(chunk.base64);
+        if (chunkBytes.length !== length) {
+          throw new Error(`Apps Script returned an incomplete chunk at byte ${offset}.`);
+        }
+        pdfBytes.set(chunkBytes, offset);
+        offset += chunkBytes.length;
+        showStatus(`Downloading publication... ${Math.round((offset / totalBytes) * 100)}%`);
+      }
+
+      return pdfBytes;
     }
 
     async function fetchPdfFromUrl(url, failures = [], source = 'Drive download') {
@@ -2715,6 +2775,60 @@
       return output;
     }
 
+    if (action === 'chunk') {
+      var fileId = params.id;
+      var offset = Number(params.offset);
+      var requestedLength = Number(params.length);
+      var maxChunkSize = 4 * 1024 * 1024;
+      if (!fileId || !Number.isSafeInteger(offset) || offset < 0 ||
+          !Number.isSafeInteger(requestedLength) || requestedLength < 1 ||
+          requestedLength > maxChunkSize) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "error",
+          message: "Invalid chunk request. Provide an id, non-negative offset, and length from 1 to 4194304."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      var chunkFile = DriveApp.getFileById(fileId);
+      var totalBytes = chunkFile.getSize();
+      if (offset >= totalBytes) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "error",
+          message: "Chunk offset is outside the file."
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      var end = Math.min(offset + requestedLength, totalBytes) - 1;
+      var chunkResponse = UrlFetchApp.fetch(
+        "https://www.googleapis.com/drive/v3/files/" + encodeURIComponent(fileId) +
+          "?alt=media&supportsAllDrives=true",
+        {
+          headers: {
+            Authorization: "Bearer " + ScriptApp.getOAuthToken(),
+            Range: "bytes=" + offset + "-" + end
+          },
+          muteHttpExceptions: true
+        }
+      );
+      if (chunkResponse.getResponseCode() !== 206) {
+        throw new Error("Drive API did not return a partial file range (HTTP " +
+          chunkResponse.getResponseCode() + "). Re-authorize the Apps Script deployment and try again.");
+      }
+
+      var chunkBytes = chunkResponse.getContent();
+      if (chunkBytes.length !== end - offset + 1) {
+        throw new Error("Drive API returned an incomplete file range.");
+      }
+
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "success",
+        id: fileId,
+        offset: offset,
+        totalBytes: totalBytes,
+        base64: Utilities.base64Encode(chunkBytes)
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     if (action === 'get' || params.id) {
       var file;
       try {
@@ -2733,7 +2847,9 @@
           name: file.getName(),
           sizeBytes: fileSize,
           mimeType: file.getMimeType(),
-          downloadUrl: directDownloadUrl
+          downloadUrl: directDownloadUrl,
+          chunked: true,
+          chunkSize: 4 * 1024 * 1024
         })).setMimeType(ContentService.MimeType.JSON);
       }
 
@@ -2759,6 +2875,8 @@
           sizeBytes: fileSize,
           mimeType: file.getMimeType(),
           downloadUrl: directDownloadUrl,
+          chunked: true,
+          chunkSize: 4 * 1024 * 1024,
           warning: blobErr.toString()
         })).setMimeType(ContentService.MimeType.JSON);
       }

@@ -50,6 +50,8 @@ Because Google Drive restricts raw cross-origin binary downloads and folder inde
 5. Click **Deploy**, approve permissions if prompted, and copy the **Web app URL** (ends in `/exec`).
 
 > **Tip:** In FlipDrive, you can paste this URL into the **Settings (⚙)** modal or the **Bridge Update** prompt at any time to immediately connect your Drive library.
+>
+> Large PDFs are downloaded through authenticated, 4 MB Drive API ranges to avoid Apps Script's whole-file blob limit. After updating the bridge code, approve any requested Google permissions (including external requests), deploy a **new version**, and keep **Execute as: Me** so the bridge can access your Drive files.
 
 ---
 
