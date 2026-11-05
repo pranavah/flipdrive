@@ -1618,9 +1618,12 @@
     }
 
     function base64ToUint8Array(base64) {
-      const raw = atob(base64);
-      const uint8 = new Uint8Array(raw.length);
-      for (let i = 0; i < raw.length; i++) {
+      if (!base64 || typeof base64 !== 'string') return new Uint8Array(0);
+      const cleanBase64 = base64.replace(/\s/g, '');
+      const raw = atob(cleanBase64);
+      const len = raw.length;
+      const uint8 = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
         uint8[i] = raw.charCodeAt(i);
       }
       return uint8;
@@ -2048,10 +2051,16 @@
       return { width: Math.round(w), height: Math.round(h), isMobile };
     }
 
+    function resetFlipbookContainer() {
+      const stage = $('#reader-stage');
+      stage.empty();
+      stage.append('<div id="flipbook"></div>');
+    }
+
     async function fetchPdfDocument(fileId, fileMeta = null) {
       // 1. Direct URL (e.g. demo files)
       if (fileMeta && fileMeta.directUrl) {
-        showStatus('Loading sample PDF stream...');
+        showStatus('Loading sample publication stream...');
         return await pdfjsLib.getDocument({ url: fileMeta.directUrl }).promise;
       }
 
@@ -2065,7 +2074,10 @@
           });
           if (resp.ok) {
             const buf = await resp.arrayBuffer();
-            return await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+            const header = new Uint8Array(buf.slice(0, 5));
+            if (String.fromCharCode.apply(null, header).startsWith('%PDF')) {
+              return await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+            }
           }
         } catch (authErr) {
           console.warn("OAuth fetch failed, trying GAS bridge:", authErr);
@@ -2075,39 +2087,77 @@
       // 3. Google Apps Script Bridge
       const gasUrl = appConfig.gasEndpoint || DEFAULT_GAS_ENDPOINT;
       if (gasUrl) {
-        showStatus('Streaming document via Google Apps Script bridge...');
-        const targetUrl = `${gasUrl}?id=${fileId}`;
-        const resp = await fetch(targetUrl);
-        const data = await resp.json();
+        try {
+          showStatus('Streaming document via Google Apps Script bridge...');
+          const targetUrl = `${gasUrl}?action=get&id=${encodeURIComponent(fileId)}`;
+          const resp = await fetch(targetUrl);
+          if (resp.ok) {
+            const data = await resp.json();
 
-        if (data.status === 'error') {
-          throw new Error(data.message || 'Apps Script bridge failed to fetch file.');
+            if (data.status === 'success') {
+              if (data.base64 && data.base64.length > 50) {
+                showStatus('Unpacking document bytes...');
+                const pdfBytes = base64ToUint8Array(data.base64);
+                return await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+              } else if (data.downloadUrl) {
+                showStatus('Streaming publication from direct URL...');
+                const pdfDoc = await fetchPdfFromUrl(data.downloadUrl);
+                if (pdfDoc) return pdfDoc;
+              }
+            } else if (data.status === 'error') {
+              console.warn("Apps Script returned error:", data.message);
+            }
+          }
+        } catch (gasErr) {
+          console.warn("Apps Script bridge failed, trying fallback stream pipelines:", gasErr);
         }
-
-        showStatus('Unpacking document bytes...');
-        const pdfBytes = base64ToUint8Array(data.base64);
-        return await pdfjsLib.getDocument({ data: pdfBytes }).promise;
       }
 
-      // 4. Proxy Pipeline Fallback
-      const rawUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+      // 4. Redundant Direct Stream Pipelines (CORS Proxies)
+      showStatus('Connecting to redundant publication stream...');
+      const fallbackPdf = await fetchViaProxy(fileId);
+      if (fallbackPdf) {
+        return fallbackPdf;
+      }
+
+      throw new Error("Unable to stream PDF from Google Drive. Please verify the PDF file sharing is set to 'Anyone with the link can view'.");
+    }
+
+    async function fetchPdfFromUrl(url) {
       const proxies = [
-        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rawUrl)}`,
-        `https://corsproxy.io/?url=${encodeURIComponent(rawUrl)}`
+        `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
       ];
 
-      for (let i = 0; i < proxies.length; i++) {
+      for (const pUrl of proxies) {
         try {
-          showStatus(`Attempting proxy stream (${i + 1}/${proxies.length})...`);
-          const loadingTask = pdfjsLib.getDocument({ url: proxies[i] });
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 7000));
-          return await Promise.race([loadingTask.promise, timeoutPromise]);
+          const resp = await fetch(pUrl);
+          if (resp.ok) {
+            const buf = await resp.arrayBuffer();
+            const header = new Uint8Array(buf.slice(0, 5));
+            if (String.fromCharCode.apply(null, header).startsWith('%PDF')) {
+              return await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+            }
+          }
         } catch (e) {
-          console.warn("Proxy attempt failed:", e);
+          console.warn("Direct proxy attempt failed:", e);
         }
       }
+      return null;
+    }
 
-      throw new Error("Unable to stream PDF from Google Drive. Please verify sharing permissions and Apps Script endpoint.");
+    async function fetchViaProxy(fileId) {
+      const directCandidates = [
+        `https://drive.usercontent.google.com/download?id=${fileId}&export=download`,
+        `https://drive.google.com/uc?export=download&id=${fileId}`
+      ];
+
+      for (const directUrl of directCandidates) {
+        const doc = await fetchPdfFromUrl(directUrl);
+        if (doc) return doc;
+      }
+      return null;
     }
 
     async function openReader(fileId, fileName, resumePage = 1) {
@@ -2123,7 +2173,7 @@
         // Find file metadata from catalogue
         const fileMeta = folderFiles.find(f => f.id === fileId);
 
-        // Load document
+        // Load document through robust multi-tier pipeline
         const pdf = await fetchPdfDocument(fileId, fileMeta);
         activePdfInstance = pdf;
         const totalPages = pdf.numPages;
@@ -2131,9 +2181,8 @@
         document.getElementById('lbl-total').textContent = totalPages;
         $('#reader-jump-input').attr('max', totalPages);
 
-        // Reset flipbook DOM
-        $('#flipbook').turn('destroy');
-        $('#flipbook').empty();
+        // Reset flipbook DOM safely without non-existent destroy method
+        resetFlipbookContainer();
 
         showStatus('Constructing 3D publication...');
         const { width, height, isMobile } = getViewportSize();
@@ -2146,12 +2195,14 @@
           $('#flipbook').append(pageDiv);
         }
 
-        // Initialize Turn.js
+        // Initialize Turn.js (single page mode if mobile or single-page doc)
+        const displayMode = (isMobile || totalPages === 1) ? 'single' : 'double';
+
         $('#flipbook').turn({
           width: width,
           height: height,
           autoCenter: true,
-          display: isMobile ? 'single' : 'double',
+          display: displayMode,
           acceleration: true,
           elevation: 50,
           gradients: true,
@@ -2187,10 +2238,16 @@
         updateBrowserUrl(fileId, targetPage);
 
       } catch (err) {
+        console.error("Publication load failure:", err);
+        const errorDetail = (err && (err.message || err.toString())) || (typeof err === 'object' ? JSON.stringify(err) : String(err));
         showErrorStatus(`
           <strong>Unable to load publication</strong><br><br>
-          ${escapeHtml(err.message)}<br><br>
-          <span style="font-size: 13px; color: #cbd5e1;">Check sharing permissions on Google Drive or verify your Apps Script Bridge.</span>
+          <div style="background: rgba(0,0,0,0.3); padding: 10px 14px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #fca5a5; word-break: break-word; text-align: left;">
+            ${escapeHtml(errorDetail)}
+          </div><br>
+          <span style="font-size: 13px; color: #cbd5e1;">
+            Ensure the PDF file sharing is set to <strong>"Anyone with the link can view"</strong>, or try refreshing the stream.
+          </span>
         `);
       }
     }
@@ -2322,8 +2379,7 @@
     function exitReader() {
       $('#view-reader').hide();
       $('#view-catalogue').show();
-      $('#flipbook').turn('destroy');
-      $('#flipbook').empty();
+      resetFlipbookContainer();
       activePdfInstance = null;
       renderedPageSet.clear();
 
@@ -2607,19 +2663,52 @@
     }
 
     if (action === 'get' || params.id) {
-      var file = DriveApp.getFileById(params.id);
-      var blob = file.getBlob();
-      var bytes = blob.getBytes();
-      var output = ContentService.createTextOutput(JSON.stringify({
-        status: "success",
-        id: params.id,
-        name: file.getName(),
-        sizeBytes: bytes.length,
-        mimeType: blob.getContentType(),
-        base64: Utilities.base64Encode(bytes)
-      }));
-      output.setMimeType(ContentService.MimeType.JSON);
-      return output;
+      var file;
+      try {
+        file = DriveApp.getFileById(params.id);
+      } catch (fErr) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "File not accessible via DriveApp (" + fErr.toString() + "). Ensure file sharing is set to 'Anyone with the link can view'." })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      var directDownloadUrl = "https://drive.google.com/uc?export=download&id=" + params.id;
+      var fileSize = file.getSize();
+
+      if (fileSize > 22000000) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          id: params.id,
+          name: file.getName(),
+          sizeBytes: fileSize,
+          mimeType: file.getMimeType(),
+          downloadUrl: directDownloadUrl
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+
+      try {
+        var blob = file.getBlob();
+        var bytes = blob.getBytes();
+        var output = ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          id: params.id,
+          name: file.getName(),
+          sizeBytes: bytes.length,
+          mimeType: blob.getContentType(),
+          base64: Utilities.base64Encode(bytes),
+          downloadUrl: directDownloadUrl
+        }));
+        output.setMimeType(ContentService.MimeType.JSON);
+        return output;
+      } catch (blobErr) {
+        return ContentService.createTextOutput(JSON.stringify({
+          status: "success",
+          id: params.id,
+          name: file.getName(),
+          sizeBytes: fileSize,
+          mimeType: file.getMimeType(),
+          downloadUrl: directDownloadUrl,
+          warning: blobErr.toString()
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
     }
 
     return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Unknown action" })).setMimeType(ContentService.MimeType.JSON);

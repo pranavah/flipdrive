@@ -11,7 +11,7 @@
  *
  * Supported Actions:
  * - action=list & folderId=... : Recursively lists all PDF files in folder and subfolders with categories, thumbnails & metadata
- * - action=get & id=... (or ?id=...) : Streams binary base64 data of a PDF file
+ * - action=get & id=... (or ?id=...) : Streams binary base64 data and direct download URL of a PDF file
  */
 
 function doGet(e) {
@@ -151,7 +151,7 @@ function doGet(e) {
       });
     }
 
-    // 2. GET FILE BY ID (BASE64 BINARY STREAM)
+    // 2. GET FILE BY ID (BASE64 BINARY STREAM & DIRECT URL)
     if (action === 'get' || params.id) {
       var fileId = params.id;
       if (!fileId) {
@@ -167,22 +167,52 @@ function doGet(e) {
       } catch (err) {
         return createJsonResponse({ 
           status: "error", 
-          message: "File not accessible. Ensure file sharing is set to 'Anyone with the link can view'." 
+          message: "File not accessible via DriveApp (" + err.toString() + "). Verify file sharing is set to 'Anyone with the link can view'." 
         });
       }
 
-      var blob = file.getBlob();
-      var bytes = blob.getBytes();
-      var base64Data = Utilities.base64Encode(bytes);
+      var directDownloadUrl = "https://drive.google.com/uc?export=download&id=" + fileId;
+      var fileSize = file.getSize();
 
-      return createJsonResponse({
-        status: "success",
-        id: fileId,
-        name: file.getName(),
-        sizeBytes: bytes.length,
-        mimeType: blob.getContentType(),
-        base64: base64Data
-      });
+      // For large files (>20 MB), Base64 string memory limits in Apps Script V8 can be exceeded.
+      // In that case, return directDownloadUrl so the reader can stream it without crashing.
+      if (fileSize > 22000000) {
+        return createJsonResponse({
+          status: "success",
+          id: fileId,
+          name: file.getName(),
+          sizeBytes: fileSize,
+          mimeType: file.getMimeType(),
+          downloadUrl: directDownloadUrl
+        });
+      }
+
+      try {
+        var blob = file.getBlob();
+        var bytes = blob.getBytes();
+        var base64Data = Utilities.base64Encode(bytes);
+
+        return createJsonResponse({
+          status: "success",
+          id: fileId,
+          name: file.getName(),
+          sizeBytes: bytes.length,
+          mimeType: blob.getContentType(),
+          base64: base64Data,
+          downloadUrl: directDownloadUrl
+        });
+      } catch (blobErr) {
+        // Fallback: If byte conversion or Base64 encoding fails, return downloadUrl
+        return createJsonResponse({
+          status: "success",
+          id: fileId,
+          name: file.getName(),
+          sizeBytes: fileSize,
+          mimeType: file.getMimeType(),
+          downloadUrl: directDownloadUrl,
+          warning: blobErr.toString()
+        });
+      }
     }
 
     return createJsonResponse({ 
