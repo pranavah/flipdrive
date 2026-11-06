@@ -12,6 +12,7 @@ function render_drive_ebook_reader($atts) {
     $args = shortcode_atts(array(
         'id'     => '',
         'reader' => 'https://yourdomain.com/reader.html',
+        'secret' => '',
         'width'  => '100%',
         'height' => '650px',
     ), $atts, 'ebook_reader');
@@ -21,6 +22,9 @@ function render_drive_ebook_reader($atts) {
     }
 
     $iframe_src = esc_url(add_query_arg('id', sanitize_text_field($args['id']), $args['reader']));
+    if (!empty($args['secret'])) {
+        $iframe_src = esc_url(add_query_arg('secret', sanitize_text_field($args['secret']), $iframe_src));
+    }
 
     return sprintf(
         '<div class="ebook-reader-container" style="width: %s; height: %s; max-width: 100%%; margin: 20px auto;">

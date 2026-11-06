@@ -16,9 +16,28 @@
  * - action=chunk & id=... & offset=... & length=... : Reads an authenticated PDF byte range
  */
 
+function getBridgeSecret() {
+  return PropertiesService.getScriptProperties().getProperty('FLIPDRIVE_SECRET') || '';
+}
+
+function isAuthorizedRequest(params) {
+  var providedKey = String(params.key || params.token || params.secret || '').trim();
+  var expectedKey = getBridgeSecret();
+  if (!expectedKey) {
+    return false;
+  }
+  return providedKey === expectedKey;
+}
+
 function doGet(e) {
   try {
     var params = (e && e.parameter) ? e.parameter : {};
+    if (!isAuthorizedRequest(params)) {
+      return createJsonResponse({
+        status: "error",
+        message: "Unauthorized request. Set FLIPDRIVE_SECRET in Apps Script properties and include the matching key parameter."
+      });
+    }
     var action = params.action;
     
     // Auto-detect action if not explicitly provided

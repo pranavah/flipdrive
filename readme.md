@@ -30,6 +30,7 @@ FlipDrive is a lightweight, responsive web application that connects directly to
   - Dynamically updates the saved page as the user flips through the book.
 - **✨ Realistic 3D Flipbook:** Page-turning physics, drop shadows, responsive single/double page layout, keyboard shortcuts (`←`/`→`), jump-to-page input, and fullscreen mode.
 - **📄 Flexible Reading Views:** Choose the default Flipbook view from the catalogue, or switch between the 3D flipbook and a page-by-page PDF view while reading.
+- **🌐 Language Options:** Switch the navigation and reader controls between English (default), Kannada, and Sanskrit. The selected language is saved in the browser and shared with the reader.
 - **🚀 Zero Build Step & Zero Hosting Cost:** Works purely with vanilla HTML, CSS, JavaScript, PDF.js, and Turn.js — fully compatible with GitHub Pages or static web servers.
 
 ---
@@ -55,6 +56,8 @@ Because Google Drive restricts raw cross-origin binary downloads and folder inde
 7. Click **Deploy** and copy the **Web app URL** (ends in `/exec`).
 
 > **Tip:** In FlipDrive, you can paste this URL into the **Settings (⚙)** modal or the **Bridge Update** prompt at any time to immediately connect your Drive library.
+>
+> **Security hardening:** Store a strong random value in the Apps Script project's Script Properties under `FLIPDRIVE_SECRET`, and enter the same value in FlipDrive Settings. Requests without the matching `key` query parameter are rejected, even when the deployment is publicly accessible.
 >
 > Large PDFs are downloaded through authenticated, 512 KB Drive API ranges to avoid Apps Script's whole-file blob limit and keep each response small. The bridge requires both Drive read access and the `script.external_request` scope. Keep **Execute as: Me** so the bridge can access your Drive files.
 

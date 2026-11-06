@@ -1208,10 +1208,16 @@
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
         </svg>
-        Link Folder
+        <span data-i18n="linkFolder">Link Folder</span>
       </button>
 
-      <button class="btn btn-ghost btn-sm" id="btn-open-settings" title="Configuration & Settings">
+      <select class="sort-select" id="language-select" aria-label="Language" data-i18n-aria-label="language">
+        <option value="en">English</option>
+        <option value="kn">ಕನ್ನಡ</option>
+        <option value="sa">संस्कृतम्</option>
+      </select>
+
+      <button class="btn btn-ghost btn-sm" id="btn-open-settings" title="Configuration & Settings" data-i18n-title="settings">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -1224,8 +1230,8 @@
   <main id="view-catalogue">
     <!-- Hero Linker prompt shown when no folder is loaded -->
     <div class="hero-linker" id="hero-linker-box">
-      <h1 class="hero-title">Connect your Google Drive PDF Library</h1>
-      <p class="hero-subtitle">
+      <h1 class="hero-title" data-i18n="connectTitle">Connect your Google Drive PDF Library</h1>
+      <p class="hero-subtitle" data-i18n="connectDescription">
         Select any Google Drive folder to instantly index all PDF files and subfolders into a categorized publication catalogue with live thumbnails, 3D flipbook reading, and automatic progress resumption.
       </p>
       <div class="hero-buttons">
@@ -1233,20 +1239,20 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
           </svg>
-          Select Google Drive Folder
+          <span data-i18n="selectFolder">Select Google Drive Folder</span>
         </button>
         <button class="btn btn-secondary" id="hero-btn-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
           </svg>
-          Paste Folder Link
+          <span data-i18n="pasteFolderLink">Paste Folder Link</span>
         </button>
         <button class="btn btn-ghost" id="hero-btn-demo">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="5 3 19 12 5 21 5 3"/>
           </svg>
-          Explore Sample Library
+          <span data-i18n="sampleLibrary">Explore Sample Library</span>
         </button>
       </div>
     </div>
@@ -1258,7 +1264,7 @@
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
         </svg>
-        Continue Reading
+        <span data-i18n="continueReading">Continue Reading</span>
       </h2>
       <div id="continue-card-wrapper"></div>
     </div>
@@ -1269,7 +1275,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
         </svg>
-        Categories:
+        <span data-i18n="categories">Categories:</span>
       </span>
       <div class="category-chips-list" id="category-chips-container"></div>
     </div>
@@ -1281,31 +1287,31 @@
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input type="text" id="catalogue-search" placeholder="Search publications by title or category...">
+        <input type="text" id="catalogue-search" placeholder="Search publications by title or category..." data-i18n-placeholder="search">
       </div>
 
       <div class="toolbar-actions">
         <select class="sort-select" id="catalogue-sort">
-          <option value="recent">Recently Read</option>
-          <option value="category">Category / Subfolder</option>
-          <option value="name-asc">Name (A → Z)</option>
-          <option value="name-desc">Name (Z → A)</option>
-          <option value="date-desc">Newest First</option>
-          <option value="size-desc">File Size (Largest)</option>
+          <option value="recent" data-i18n="recentlyRead">Recently Read</option>
+          <option value="category" data-i18n="categorySort">Category / Subfolder</option>
+          <option value="name-asc" data-i18n="nameAscending">Name (A → Z)</option>
+          <option value="name-desc" data-i18n="nameDescending">Name (Z → A)</option>
+          <option value="date-desc" data-i18n="newestFirst">Newest First</option>
+          <option value="size-desc" data-i18n="largestFirst">File Size (Largest)</option>
         </select>
 
-        <label class="catalogue-mode-toggle" title="Choose the default view used when opening publications">
+        <label class="catalogue-mode-toggle" title="Choose the default view used when opening publications" data-i18n-title="defaultView">
           <input type="checkbox" id="catalogue-flipbook-mode" checked>
-          Flipbook view
+          <span data-i18n="flipbookView">Flipbook view</span>
         </label>
 
-        <button class="btn btn-secondary btn-sm" id="btn-refresh-folder" title="Refresh files from Drive">
+        <button class="btn btn-secondary btn-sm" id="btn-refresh-folder" title="Refresh files from Drive" data-i18n-title="refreshDrive">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="23 4 23 10 17 10"/>
             <polyline points="1 20 1 14 7 14"/>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
           </svg>
-          Refresh
+          <span data-i18n="refresh">Refresh</span>
         </button>
       </div>
     </div>
@@ -1323,7 +1329,7 @@
           <line x1="19" y1="12" x2="5" y2="12"/>
           <polyline points="12 19 5 12 12 5"/>
         </svg>
-        Back to Catalogue
+        <span data-i18n="backToCatalogue">Back to Catalogue</span>
       </button>
 
       <div class="reader-title-box">
@@ -1332,13 +1338,18 @@
       </div>
 
       <div class="reader-controls-right">
-        <label class="reader-mode-toggle" title="Switch between flipbook and page-by-page reading">
+        <label class="reader-mode-toggle" title="Switch between flipbook and page-by-page reading" data-i18n-title="switchReadingMode">
           <input type="checkbox" id="reader-flipbook-mode" checked>
-          Flipbook
+          <span data-i18n="flipbook">Flipbook</span>
         </label>
-        <span style="font-size:12px; color:var(--text-muted)">Jump to:</span>
-        <input type="number" id="reader-jump-input" class="jump-page-input" min="1" value="1" title="Type page number and press Enter">
-        <button class="btn btn-ghost btn-sm" id="btn-share-reader" title="Copy link to current page">
+        <span style="font-size:12px; color:var(--text-muted)" data-i18n="jumpTo">Jump to:</span>
+        <input type="number" id="reader-jump-input" class="jump-page-input" min="1" value="1" title="Type page number and press Enter" aria-label="Go to page" data-i18n-title="pageInput" data-i18n-aria-label="pageInput">
+        <select class="sort-select" id="reader-language-select" aria-label="Language" data-i18n-aria-label="language">
+          <option value="en">English</option>
+          <option value="kn">ಕನ್ನಡ</option>
+          <option value="sa">संस्कृतम्</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="btn-share-reader" title="Copy link to current page" data-i18n-title="sharePage">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="18" cy="5" r="3"/>
             <circle cx="6" cy="12" r="3"/>
@@ -1373,17 +1384,17 @@
 
     <!-- Bottom Dock Controls -->
     <div id="reader-dock">
-      <button class="dock-btn" id="btn-first" title="First Page">&laquo;</button>
-      <button class="dock-btn" id="btn-prev" title="Previous Page">&lsaquo; Prev</button>
+      <button class="dock-btn" id="btn-first" title="First Page" data-i18n-title="firstPage">&laquo;</button>
+      <button class="dock-btn" id="btn-prev" title="Previous Page" data-i18n-title="previousPage">&lsaquo; <span data-i18n="previous">Prev</span></button>
       <div id="page-indicator">
-        <input type="number" id="reader-page-input" class="reader-page-input" min="1" value="1" aria-label="Go to page">
+        <input type="number" id="reader-page-input" class="reader-page-input" min="1" value="1" aria-label="Go to page" data-i18n-title="pageInput" data-i18n-aria-label="pageInput">
         <span> / <span id="lbl-total">-</span></span>
       </div>
-      <button class="dock-btn" id="btn-next" title="Next Page">Next &rsaquo;</button>
-      <button class="dock-btn" id="btn-last" title="Last Page">&raquo;</button>
-      <button class="dock-btn" id="btn-zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
-      <button class="dock-btn" id="btn-zoom-reset" title="Reset zoom">100%</button>
-      <button class="dock-btn" id="btn-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+      <button class="dock-btn" id="btn-next" title="Next Page" data-i18n-title="nextPage"><span data-i18n="next">Next</span> &rsaquo;</button>
+      <button class="dock-btn" id="btn-last" title="Last Page" data-i18n-title="lastPage">&raquo;</button>
+      <button class="dock-btn" id="btn-zoom-out" title="Zoom out" aria-label="Zoom out" data-i18n-title="zoomOut" data-i18n-aria-label="zoomOut">−</button>
+      <button class="dock-btn" id="btn-zoom-reset" title="Reset zoom" data-i18n-title="resetZoom">100%</button>
+      <button class="dock-btn" id="btn-zoom-in" title="Zoom in" aria-label="Zoom in" data-i18n-title="zoomIn" data-i18n-aria-label="zoomIn">+</button>
       <button class="dock-btn" id="btn-fullscreen" title="Toggle Fullscreen">&#x26F6;</button>
     </div>
   </div>
@@ -1392,31 +1403,31 @@
   <div class="modal-backdrop" id="modal-folder-picker">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">Link Google Drive Folder</h3>
+        <h3 class="modal-title" data-i18n="linkFolderTitle">Link Google Drive Folder</h3>
         <button class="modal-close" id="btn-close-linker-modal">&times;</button>
       </div>
       <div class="modal-body">
         <div class="tab-nav">
-          <button class="tab-btn active" data-tab="tab-link-input">Folder Link / ID</button>
-          <button class="tab-btn" data-tab="tab-oauth-picker">Google OAuth &amp; Picker</button>
-          <button class="tab-btn" data-tab="tab-demo">Demo Samples</button>
+          <button class="tab-btn active" data-tab="tab-link-input" data-i18n="folderLinkTab">Folder Link / ID</button>
+          <button class="tab-btn" data-tab="tab-oauth-picker" data-i18n="oauthPickerTab">Google OAuth &amp; Picker</button>
+          <button class="tab-btn" data-tab="tab-demo" data-i18n="demoSamplesTab">Demo Samples</button>
         </div>
 
         <!-- Tab 1: Folder Link or ID -->
         <div class="tab-pane active" id="tab-link-input">
           <div class="form-group">
-            <label class="form-label">Google Drive Folder URL or Folder ID</label>
+            <label class="form-label" data-i18n="folderUrlLabel">Google Drive Folder URL or Folder ID</label>
             <input type="text" class="form-input" id="input-folder-url" placeholder="https://drive.google.com/drive/folders/1w7nE72Jk... or 1w7n...">
-            <div class="form-hint">
+            <div class="form-hint" data-i18n="folderUrlHint">
               Paste the shareable link of any Google Drive folder. FlipDrive will recursively scan the folder and all its subfolders. Ensure folder sharing is set to <strong>"Anyone with the link can view"</strong>.
             </div>
           </div>
-          <button class="btn btn-primary" style="width: 100%;" id="btn-submit-folder-url">Fetch PDF Catalogue</button>
+          <button class="btn btn-primary" style="width: 100%;" id="btn-submit-folder-url" data-i18n="fetchCatalogue">Fetch PDF Catalogue</button>
         </div>
 
         <!-- Tab 2: OAuth 2.0 & Native Picker -->
         <div class="tab-pane" id="tab-oauth-picker">
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 16px; line-height: 1.5;" data-i18n="oauthDescription">
             Authorize direct, secure read access to your Google Drive and select any folder interactively via Google's native Folder Picker dialog.
           </p>
           <div id="oauth-status-box" style="margin-bottom:16px; font-size:13px; color:#cbd5e1;"></div>
@@ -1426,7 +1437,7 @@
                 <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
                 <path d="M12 6v6l4 2"/>
               </svg>
-              Sign In &amp; Select Folder via Drive Picker
+              <span data-i18n="signInPicker">Sign In &amp; Select Folder via Drive Picker</span>
             </button>
             <div class="form-hint">
               Requires a Google Cloud OAuth Client ID (configurable in Settings).
@@ -1439,7 +1450,7 @@
           <p style="font-size:13px; color:var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
             Want to test FlipDrive immediately? Load our curated sample library featuring categorized publications, complete with 3D flipbook reading and bookmarking.
           </p>
-          <button class="btn btn-primary" style="width: 100%;" id="btn-load-demo-library">Load Demo Library</button>
+          <button class="btn btn-primary" style="width: 100%;" id="btn-load-demo-library" data-i18n="loadDemo">Load Demo Library</button>
         </div>
       </div>
     </div>
@@ -1496,44 +1507,46 @@
   <div class="modal-backdrop" id="modal-settings">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">FlipDrive Settings</h3>
+        <h3 class="modal-title" data-i18n="settingsTitle">FlipDrive Settings</h3>
         <button class="modal-close" id="btn-close-settings-modal">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Google Apps Script Bridge URL</label>
+          <label class="form-label" data-i18n="bridgeUrlLabel">Google Apps Script Bridge URL</label>
           <input type="text" class="form-input" id="cfg-gas-url" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
-          <div class="form-hint">
+          <div class="form-hint" data-i18n="bridgeUrlHint">
             The private Google Apps Script deployment URL used to list folders and bypass CORS restrictions.
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Google Cloud OAuth Client ID (Optional)</label>
+          <label class="form-label" data-i18n="oauthClientLabel">Google Cloud OAuth Client ID (Optional)</label>
           <input type="text" class="form-input" id="cfg-client-id" placeholder="xxxx.apps.googleusercontent.com">
-          <div class="form-hint">
+          <div class="form-hint" data-i18n="oauthClientHint">
             Used for Google Identity Services (GIS) Sign-In and native Google Picker integration.
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Google API / Developer Key (Optional)</label>
+          <label class="form-label" data-i18n="developerKeyLabel">Google API / Developer Key (Optional)</label>
           <input type="text" class="form-input" id="cfg-api-key" placeholder="AIzaSy...">
+          <label class="form-label" data-i18n="bridgeSecretLabel">Bridge secret (must match Apps Script FLIPDRIVE_SECRET)</label>
+          <input type="password" class="form-input" id="cfg-gas-secret" placeholder="Use a strong random value">
           <div class="form-hint">
             Enables direct Google Drive API v3 recursive folder queries as a fallback.
           </div>
         </div>
 
         <div class="form-group" style="padding-top: 10px; border-top: 1px solid var(--border-color);">
-          <label class="form-label">Reading Progress &amp; History</label>
+          <label class="form-label" data-i18n="readingHistory">Reading Progress &amp; History</label>
           <div style="display:flex; align-items:center; justify-content:space-between;">
             <span style="font-size:13px; color:var(--text-muted)" id="cfg-history-count">0 publications tracked</span>
-            <button class="btn btn-secondary btn-sm" id="btn-clear-history">Clear History</button>
+            <button class="btn btn-secondary btn-sm" id="btn-clear-history" data-i18n="clearHistory">Clear History</button>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+        <button class="btn btn-primary" id="btn-save-settings" data-i18n="saveSettings">Save Settings</button>
       </div>
     </div>
   </div>
@@ -1548,8 +1561,153 @@
     const STORAGE_KEY_FOLDER = 'flipdrive_active_folder';
     const STORAGE_KEY_CONFIG = 'flipdrive_app_config';
     const STORAGE_KEY_READER_MODE = 'flipdrive_reader_mode';
+    const STORAGE_KEY_LANGUAGE = 'flipdrive_language';
 
     const DEFAULT_GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzadHLrOFoiZfPf0GiWK8zIIt5yEiN7kPIgoMBM1Yl267ApwX0k74RlH2DMvzv7n9Lg/exec";
+
+    const TRANSLATIONS = {
+      en: {
+        language: 'Language', settings: 'Configuration & Settings', selectFolder: 'Select Google Drive Folder',
+        linkFolder: 'Link Folder', connectTitle: 'Connect your Google Drive PDF Library',
+        connectDescription: 'Select any Google Drive folder to instantly index all PDF files and subfolders into a categorized publication catalogue with live thumbnails, 3D flipbook reading, and automatic progress resumption.',
+        pasteFolderLink: 'Paste Folder Link', sampleLibrary: 'Explore Sample Library',
+        continueReading: 'Continue Reading', categories: 'Categories:', search: 'Search publications by title or category...',
+        recentlyRead: 'Recently Read', categorySort: 'Category / Subfolder', nameAscending: 'Name (A → Z)',
+        nameDescending: 'Name (Z → A)', newestFirst: 'Newest First', largestFirst: 'File Size (Largest)',
+        defaultView: 'Choose the default view used when opening publications', flipbookView: 'Flipbook view',
+        refreshDrive: 'Refresh files from Drive', refresh: 'Refresh', backToCatalogue: 'Back to Catalogue',
+        switchReadingMode: 'Switch between flipbook and page-by-page reading', flipbook: 'Flipbook',
+        jumpTo: 'Jump to:', sharePage: 'Copy link to current page', firstPage: 'First Page',
+        previousPage: 'Previous Page', previous: 'Prev', nextPage: 'Next Page', next: 'Next',
+        lastPage: 'Last Page', zoomOut: 'Zoom out', resetZoom: 'Reset zoom', zoomIn: 'Zoom in',
+        language: 'Language', restartPage: 'Restart at Page 1', pageInput: 'Go to page', loadingPublication: 'Loading publication...',
+        linkFolderTitle: 'Link Google Drive Folder', folderLinkTab: 'Folder Link / ID', oauthPickerTab: 'Google OAuth & Picker',
+        demoSamplesTab: 'Demo Samples', folderUrlLabel: 'Google Drive Folder URL or Folder ID',
+        folderUrlHint: 'Paste a shareable Google Drive folder link. FlipDrive scans the folder and its subfolders.',
+        fetchCatalogue: 'Fetch PDF Catalogue', oauthDescription: 'Authorize read access to Drive and choose a folder with Google Picker.',
+        signInPicker: 'Sign In & Select Folder via Drive Picker', loadDemo: 'Load Demo Library',
+        settingsTitle: 'FlipDrive Settings', bridgeUrlLabel: 'Google Apps Script Bridge URL',
+        bridgeUrlHint: 'The Apps Script URL used to list folders and retrieve files.',
+        oauthClientLabel: 'Google Cloud OAuth Client ID (Optional)', oauthClientHint: 'Used for Google Sign-In and the native folder picker.',
+        developerKeyLabel: 'Google API / Developer Key (Optional)',
+        bridgeSecretLabel: 'Bridge secret (must match Apps Script FLIPDRIVE_SECRET)',
+        readingHistory: 'Reading Progress & History', clearHistory: 'Clear History', saveSettings: 'Save Settings',
+        statusUnread: 'Unread', statusRead: 'Read', statusCompleted: 'Read · Completed ✓',
+        statusReadingPage: 'Read · p. {current} / {total}', readAction: 'Read',
+        resumeAction: 'Resume (p. {page})', resumeReading: 'Resume Reading (p. {page})',
+        restartFromStart: 'Start from Page 1', jumpBackIn: 'Jump back in',
+        pageOf: 'Page {current} of {total} ({percent}%)',
+        noPublications: 'No PDF publications found',
+        noMatchingPublications: 'No matching PDF files found in this category or search query.'
+      },
+      kn: {
+        language: 'ಭಾಷೆ', settings: 'ಸಂರಚನೆ ಮತ್ತು ಸೆಟ್ಟಿಂಗ್‌ಗಳು', selectFolder: 'Google Drive ಫೋಲ್ಡರ್ ಆಯ್ಕೆಮಾಡಿ',
+        linkFolder: 'ಫೋಲ್ಡರ್ ಲಿಂಕ್ ಮಾಡಿ', connectTitle: 'ನಿಮ್ಮ Google Drive PDF ಸಂಗ್ರಹವನ್ನು ಸಂಪರ್ಕಿಸಿ',
+        connectDescription: 'PDF ಫೈಲ್‌ಗಳು ಮತ್ತು ಉಪಫೋಲ್ಡರ್‌ಗಳ ಕ್ಯಾಟಲಾಗ್ ರಚಿಸಲು Google Drive ಫೋಲ್ಡರ್ ಆಯ್ಕೆಮಾಡಿ.',
+        pasteFolderLink: 'ಫೋಲ್ಡರ್ ಲಿಂಕ್ ಅಂಟಿಸಿ', sampleLibrary: 'ಮಾದರಿ ಸಂಗ್ರಹವನ್ನು ನೋಡಿ',
+        continueReading: 'ಓದುವುದನ್ನು ಮುಂದುವರಿಸಿ', categories: 'ವರ್ಗಗಳು:', search: 'ಶೀರ್ಷಿಕೆ ಅಥವಾ ವರ್ಗದ ಮೂಲಕ ಹುಡುಕಿ...',
+        recentlyRead: 'ಇತ್ತೀಚೆಗೆ ಓದಿದವು', categorySort: 'ವರ್ಗ / ಉಪಫೋಲ್ಡರ್', nameAscending: 'ಹೆಸರು (A → Z)',
+        nameDescending: 'ಹೆಸರು (Z → A)', newestFirst: 'ಹೊಸದು ಮೊದಲು', largestFirst: 'ಫೈಲ್ ಗಾತ್ರ (ದೊಡ್ಡದು)',
+        defaultView: 'ಪ್ರಕಟಣೆ ತೆರೆಯುವಾಗ ಬಳಸುವ ನೋಟವನ್ನು ಆಯ್ಕೆಮಾಡಿ', flipbookView: 'ಪುಟ ತಿರುಗಿಸುವ ನೋಟ',
+        refreshDrive: 'Drive ಫೈಲ್‌ಗಳನ್ನು ಮರುಲೋಡ್ ಮಾಡಿ', refresh: 'ಮರುಲೋಡ್', backToCatalogue: 'ಕ್ಯಾಟಲಾಗ್‌ಗೆ ಹಿಂತಿರುಗಿ',
+        switchReadingMode: 'ಪುಟ ತಿರುಗಿಸುವ ಅಥವಾ ಒಂದೊಂದೇ ಪುಟ ಓದುವ ವಿಧಾನ ಆಯ್ಕೆಮಾಡಿ', flipbook: 'ಪುಟ ತಿರುಗಿಸುವಿಕೆ',
+        jumpTo: 'ಪುಟಕ್ಕೆ ಹೋಗಿ:', sharePage: 'ಪ್ರಸ್ತುತ ಪುಟದ ಲಿಂಕ್ ನಕಲಿಸಿ', firstPage: 'ಮೊದಲ ಪುಟ',
+        previousPage: 'ಹಿಂದಿನ ಪುಟ', previous: 'ಹಿಂದೆ', nextPage: 'ಮುಂದಿನ ಪುಟ', next: 'ಮುಂದೆ',
+        lastPage: 'ಕೊನೆಯ ಪುಟ', zoomOut: 'ಚಿಕ್ಕದಾಗಿಸಿ', resetZoom: 'ಝೂಮ್ ಮರುಹೊಂದಿಸಿ', zoomIn: 'ದೊಡ್ಡದಾಗಿಸಿ',
+        language: 'ಭಾಷೆ', restartPage: '1ನೇ ಪುಟದಿಂದ ಮತ್ತೆ ಪ್ರಾರಂಭಿಸಿ', pageInput: 'ಪುಟಕ್ಕೆ ಹೋಗಿ', loadingPublication: 'ಪ್ರಕಟಣೆ ಲೋಡ್ ಆಗುತ್ತಿದೆ...',
+        linkFolderTitle: 'Google Drive ಫೋಲ್ಡರ್ ಲಿಂಕ್ ಮಾಡಿ', folderLinkTab: 'ಫೋಲ್ಡರ್ ಲಿಂಕ್ / ID', oauthPickerTab: 'Google OAuth ಮತ್ತು Picker',
+        demoSamplesTab: 'ಮಾದರಿ ಪ್ರಕಟಣೆಗಳು', folderUrlLabel: 'Google Drive ಫೋಲ್ಡರ್ URL ಅಥವಾ ID',
+        folderUrlHint: 'ಹಂಚಿಕೊಳ್ಳಬಹುದಾದ Google Drive ಫೋಲ್ಡರ್ ಲಿಂಕ್ ಅಂಟಿಸಿ. FlipDrive ಫೋಲ್ಡರ್ ಮತ್ತು ಉಪಫೋಲ್ಡರ್‌ಗಳನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡುತ್ತದೆ.',
+        fetchCatalogue: 'PDF ಕ್ಯಾಟಲಾಗ್ ಪಡೆಯಿರಿ', oauthDescription: 'Drive ಓದುವ ಅನುಮತಿ ನೀಡಿ ಮತ್ತು Google Picker ಮೂಲಕ ಫೋಲ್ಡರ್ ಆಯ್ಕೆಮಾಡಿ.',
+        signInPicker: 'ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತು Drive Picker ಮೂಲಕ ಫೋಲ್ಡರ್ ಆಯ್ಕೆಮಾಡಿ', loadDemo: 'ಮಾದರಿ ಸಂಗ್ರಹ ಲೋಡ್ ಮಾಡಿ',
+        settingsTitle: 'FlipDrive ಸೆಟ್ಟಿಂಗ್‌ಗಳು', bridgeUrlLabel: 'Google Apps Script Bridge URL',
+        bridgeUrlHint: 'ಫೋಲ್ಡರ್ ಪಟ್ಟಿ ಮತ್ತು ಫೈಲ್ ಪಡೆಯಲು ಬಳಸುವ Apps Script URL.',
+        oauthClientLabel: 'Google Cloud OAuth Client ID (ಐಚ್ಛಿಕ)', oauthClientHint: 'Google ಸೈನ್-ಇನ್ ಮತ್ತು ಫೋಲ್ಡರ್ ಆಯ್ಕೆಗೆ ಬಳಸಲಾಗುತ್ತದೆ.',
+        developerKeyLabel: 'Google API / Developer Key (ಐಚ್ಛಿಕ)',
+        bridgeSecretLabel: 'Bridge ರಹಸ್ಯ ಕೀ (Apps Script FLIPDRIVE_SECRET ಗೆ ಹೊಂದಿರಬೇಕು)',
+        readingHistory: 'ಓದುವ ಪ್ರಗತಿ ಮತ್ತು ಇತಿಹಾಸ', clearHistory: 'ಇತಿಹಾಸ ಅಳಿಸಿ', saveSettings: 'ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಉಳಿಸಿ',
+        statusUnread: 'ಓದಿಲ್ಲ', statusRead: 'ಓದಲಾಗಿದೆ', statusCompleted: 'ಓದಲಾಗಿದೆ · ಪೂರ್ಣಗೊಂಡಿದೆ ✓',
+        statusReadingPage: 'ಓದಲಾಗಿದೆ · ಪು. {current} / {total}', readAction: 'ಓದಿ',
+        resumeAction: 'ಮುಂದುವರಿಸಿ (ಪು. {page})', resumeReading: 'ಓದುವುದನ್ನು ಮುಂದುವರಿಸಿ (ಪು. {page})',
+        restartFromStart: '1ನೇ ಪುಟದಿಂದ ಪ್ರಾರಂಭಿಸಿ', jumpBackIn: 'ಓದುವುದನ್ನು ಮುಂದುವರಿಸಿ',
+        pageOf: 'ಪುಟ {current} / {total} ({percent}%)',
+        noPublications: 'PDF ಪ್ರಕಟಣೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ',
+        noMatchingPublications: 'ಈ ವರ್ಗ ಅಥವಾ ಹುಡುಕಾಟಕ್ಕೆ ಹೊಂದುವ PDF ಫೈಲ್‌ಗಳು ಕಂಡುಬಂದಿಲ್ಲ.'
+      },
+      sa: {
+        language: 'भाषा', settings: 'विन्यासाः', selectFolder: 'Google Drive सञ्चिकापुटं चिनुत',
+        linkFolder: 'सञ्चिकापुटं संयोजयतु', connectTitle: 'स्वस्य Google Drive PDF सङ्ग्रहं संयोजयतु',
+        connectDescription: 'PDF सञ्चिकानां उपसञ्चिकापुटानां च सूचीं निर्मातुं Google Drive सञ्चिकापुटं चिनुत।',
+        pasteFolderLink: 'सञ्चिकापुटस्य सूत्रं स्थापयतु', sampleLibrary: 'निदर्शनसङ्ग्रहं पश्यतु',
+        continueReading: 'पठनं निरन्तरं कुरुत', categories: 'वर्गाः:', search: 'शीर्षकेन वर्गेण वा अन्वेषयतु...',
+        recentlyRead: 'सद्यः पठितानि', categorySort: 'वर्गः / उपसञ्चिकापुटम्', nameAscending: 'नाम (A → Z)',
+        nameDescending: 'नाम (Z → A)', newestFirst: 'नूतनानि प्रथमम्', largestFirst: 'सञ्चिकापरिमाणम् (महत्)',
+        defaultView: 'प्रकाशनं उद्घाटयन् पूर्वनिर्धारितं दृश्यं चिनुत', flipbookView: 'पृष्ठपरिवर्तनदृश्यम्',
+        refreshDrive: 'Drive सञ्चिकाः पुनः आनयतु', refresh: 'पुनः आनयतु', backToCatalogue: 'सूचिकायाः प्रति',
+        switchReadingMode: 'पृष्ठपरिवर्तनं वा पृष्ठशः पठनं वा चिनुत', flipbook: 'पृष्ठपरिवर्तनम्',
+        jumpTo: 'पृष्ठं गच्छतु:', sharePage: 'वर्तमानपृष्ठस्य सूत्रं प्रतिलिखतु', firstPage: 'प्रथमं पृष्ठम्',
+        previousPage: 'पूर्वपृष्ठम्', previous: 'पूर्वम्', nextPage: 'अग्रिमं पृष्ठम्', next: 'अग्रिमम्',
+        lastPage: 'अन्तिमं पृष्ठम्', zoomOut: 'लघुकरोतु', resetZoom: 'विस्तारं पुनः स्थापयतु', zoomIn: 'विस्तारयतु',
+        language: 'भाषा', restartPage: 'प्रथमपृष्ठात् पुनः आरभत', pageInput: 'पृष्ठं गच्छतु', loadingPublication: 'प्रकाशनं लोड् भवति...',
+        linkFolderTitle: 'Google Drive सञ्चिकापुटं संयोजयतु', folderLinkTab: 'सञ्चिकापुटसूत्रम् / ID', oauthPickerTab: 'Google OAuth तथा Picker',
+        demoSamplesTab: 'निदर्शनानि', folderUrlLabel: 'Google Drive सञ्चिकापुटस्य URL अथवा ID',
+        folderUrlHint: 'साझायोग्यं Google Drive सञ्चिकापुटसूत्रं स्थापयतु। FlipDrive सञ्चिकापुटं तस्य उपसञ्चिकापुटानि च अन्वेषयति।',
+        fetchCatalogue: 'PDF सूचीं आनयतु', oauthDescription: 'Drive पठनानुमतिं दत्त्वा Google Picker द्वारा सञ्चिकापुटं चिनुत।',
+        signInPicker: 'प्रविश्य Drive Picker द्वारा सञ्चिकापुटं चिनुत', loadDemo: 'निदर्शनसङ्ग्रहं स्थापयतु',
+        settingsTitle: 'FlipDrive विन्यासाः', bridgeUrlLabel: 'Google Apps Script Bridge URL',
+        bridgeUrlHint: 'सञ्चिकापुटसूचीं सञ्चिकाः च प्राप्तुं प्रयुक्तः Apps Script URL।',
+        oauthClientLabel: 'Google Cloud OAuth Client ID (वैकल्पिकम्)', oauthClientHint: 'Google प्रवेशाय मूलसञ्चिकापुटचयनाय च प्रयुज्यते।',
+        developerKeyLabel: 'Google API / Developer Key (वैकल्पिकम्)',
+        bridgeSecretLabel: 'Bridge गुप्तकुञ्जी (Apps Script FLIPDRIVE_SECRET इत्यनेन सह मेलयतु)',
+        readingHistory: 'पठनप्रगतिः इतिहासश्च', clearHistory: 'इतिहासं अपनयतु', saveSettings: 'विन्यासान् रक्षतु',
+        statusUnread: 'अपठितम्', statusRead: 'पठितम्', statusCompleted: 'पठितम् · पूर्णम् ✓',
+        statusReadingPage: 'पठितम् · पृ. {current} / {total}', readAction: 'पठतु',
+        resumeAction: 'पठनं निरन्तरं कुरुत (पृ. {page})',
+        resumeReading: 'पठनं निरन्तरं कुरुत (पृष्ठम् {page})',
+        restartFromStart: 'प्रथमपृष्ठात् आरभत', jumpBackIn: 'पठनं पुनः आरभत',
+        pageOf: 'पृष्ठम् {current} / {total} ({percent}%)',
+        noPublications: 'PDF प्रकाशनानि न प्राप्तानि',
+        noMatchingPublications: 'अस्मिन् वर्गे अन्वेषणे वा मेलिताः PDF सञ्चिकाः न प्राप्ताः।'
+      }
+    };
+
+    function applyLanguage(language) {
+      const selectedLanguage = TRANSLATIONS[language] ? language : 'en';
+      const translations = TRANSLATIONS[selectedLanguage];
+      document.documentElement.lang = selectedLanguage;
+      document.querySelectorAll('[data-i18n]').forEach((element) => {
+        const text = translations[element.dataset.i18n];
+        if (text) element.textContent = text;
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach((element) => {
+        const text = translations[element.dataset.i18nPlaceholder];
+        if (text) element.setAttribute('placeholder', text);
+      });
+      document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+        const text = translations[element.dataset.i18nTitle];
+        if (text) element.setAttribute('title', text);
+      });
+      document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+        const text = translations[element.dataset.i18nAriaLabel];
+        if (text) element.setAttribute('aria-label', text);
+      });
+      document.querySelectorAll('#language-select, #reader-language-select').forEach((select) => {
+        select.value = selectedLanguage;
+      });
+      localStorage.setItem(STORAGE_KEY_LANGUAGE, selectedLanguage);
+      if (typeof folderFiles !== 'undefined') {
+        filterAndSortFiles();
+        renderContinueShelf();
+      }
+    }
+
+    function translate(key, values = {}) {
+      const language = localStorage.getItem(STORAGE_KEY_LANGUAGE) || 'en';
+      const template = (TRANSLATIONS[language] || TRANSLATIONS.en)[key] || TRANSLATIONS.en[key] || key;
+      return template.replace(/\{(\w+)\}/g, (match, name) =>
+        Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : match
+      );
+    }
 
     // Demo publications with sample categories
     const DEMO_PUBLICATIONS = [
@@ -1623,17 +1781,31 @@
         const stored = localStorage.getItem(STORAGE_KEY_CONFIG);
         return stored ? JSON.parse(stored) : {
           gasEndpoint: DEFAULT_GAS_ENDPOINT,
+          gasSecret: '',
           clientId: '',
           apiKey: ''
         };
       } catch (e) {
-        return { gasEndpoint: DEFAULT_GAS_ENDPOINT, clientId: '', apiKey: '' };
+        return { gasEndpoint: DEFAULT_GAS_ENDPOINT, gasSecret: '', clientId: '', apiKey: '' };
       }
     }
 
     function saveAppConfig(newCfg) {
       appConfig = { ...appConfig, ...newCfg };
       localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(appConfig));
+      if (appConfig.gasSecret) {
+        localStorage.setItem('flipdrive_gas_secret', appConfig.gasSecret);
+      }
+    }
+
+    function getBridgeRequestUrl(baseUrl, params = {}) {
+      const secret = (appConfig.gasSecret || localStorage.getItem('flipdrive_gas_secret') || '').trim();
+      if (!secret) {
+        throw new Error('The Google Apps Script bridge secret is missing. Set FLIPDRIVE_SECRET in the script and save the same key in settings.');
+      }
+      const query = new URLSearchParams(params);
+      query.set('key', secret);
+      return `${baseUrl}?${query.toString()}`;
     }
 
     function getAllReadingProgress() {
@@ -1809,7 +1981,7 @@
       showStatus('Scanning Google Drive folder &amp; subfolders...');
       try {
         const gasUrl = appConfig.gasEndpoint || DEFAULT_GAS_ENDPOINT;
-        const targetUrl = `${gasUrl}?action=list&folderId=${encodeURIComponent(folderId)}`;
+        const targetUrl = getBridgeRequestUrl(gasUrl, { action: 'list', folderId: folderId });
 
         const resp = await fetch(targetUrl);
         const data = await resp.json();
@@ -2049,13 +2221,17 @@
               <img src="${thumbUrl}" alt="Cover" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'58\\' height=\\'76\\' viewBox=\\'0 0 58 76\\' fill=\\'%231e293b\\'><rect width=\\'58\\' height=\\'76\\' fill=\\'%231e293b\\'/><text x=\\'29\\' y=\\'42\\' font-size=\\'18\\' fill=\\'%233b82f6\\' text-anchor=\\'middle\\'>PDF</text></svg>'">
             </div>
             <div class="continue-details">
-              <div class="continue-tag">Jump back in • ${formatRelativeTime(topItem.updatedAt)}</div>
+              <div class="continue-tag">${translate('jumpBackIn')} • ${formatRelativeTime(topItem.updatedAt)}</div>
               <div class="continue-title" title="${escapeHtml(topItem.fileName)}">${escapeHtml(topItem.fileName)}</div>
               <div class="continue-progress-wrapper">
                 <div class="progress-bar-bg">
                   <div class="progress-bar-fill" style="width: ${percent}%;"></div>
                 </div>
-                <span class="progress-page-text">Page ${topItem.currentPage} of ${topItem.totalPages} (${percent}%)</span>
+                <span class="progress-page-text">${translate('pageOf', {
+                  current: topItem.currentPage,
+                  total: topItem.totalPages,
+                  percent: percent
+                })}</span>
               </div>
             </div>
           </div>
@@ -2064,7 +2240,7 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="5 3 19 12 5 21 5 3"/>
               </svg>
-              Resume Reading (p. ${topItem.currentPage})
+              ${translate('resumeReading', { page: topItem.currentPage })}
             </button>
           </div>
         </div>
@@ -2085,8 +2261,8 @@
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
             </svg>
-            <p style="font-size: 16px; font-weight: 500; color: #e2e8f0; margin-bottom: 6px;">No PDF publications found</p>
-            <p style="font-size: 13px;">No matching PDF files found in this category or search query.</p>
+            <p style="font-size: 16px; font-weight: 500; color: #e2e8f0; margin-bottom: 6px;">${translate('noPublications')}</p>
+            <p style="font-size: 13px;">${translate('noMatchingPublications')}</p>
           </div>
         `);
         return;
@@ -2094,18 +2270,23 @@
 
       files.forEach(file => {
         const progress = getReadingProgress(file.id);
-        const hasProgress = progress && progress.currentPage > 1;
+        const hasProgress = progress && progress.currentPage >= 1;
         const isCompleted = progress && progress.currentPage >= progress.totalPages && progress.totalPages > 1;
         const percent = hasProgress ? (progress.percent || Math.round((progress.currentPage / progress.totalPages) * 100)) : 0;
 
-        let badgeHtml = '<span class="badge-status badge-unread">Unread</span>';
+        let badgeHtml = `<span class="badge-status badge-unread">${translate('statusUnread')}</span>`;
         let progressBarHtml = '';
 
         if (isCompleted) {
-          badgeHtml = '<span class="badge-status badge-completed">Completed ✓</span>';
+          badgeHtml = `<span class="badge-status badge-completed">${translate('statusCompleted')}</span>`;
           progressBarHtml = '<div class="card-progress-bar"><div class="card-progress-fill" style="width: 100%;"></div></div>';
         } else if (hasProgress) {
-          badgeHtml = `<span class="badge-status badge-in-progress">p. ${progress.currentPage} / ${progress.totalPages}</span>`;
+          badgeHtml = progress.currentPage > 1
+            ? `<span class="badge-status badge-in-progress">${translate('statusReadingPage', {
+              current: progress.currentPage,
+              total: progress.totalPages
+            })}</span>`
+            : `<span class="badge-status badge-in-progress">${translate('statusRead')}</span>`;
           progressBarHtml = `<div class="card-progress-bar"><div class="card-progress-fill" style="width: ${percent}%;"></div></div>`;
         }
 
@@ -2148,15 +2329,15 @@
                 ${hasProgress ? `
                   <button class="btn btn-primary btn-sm" onclick="openReader('${file.id}', '${escapeJs(file.name)}', ${progress.currentPage})">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    Resume (p. ${progress.currentPage})
+                    ${translate('resumeAction', { page: progress.currentPage })}
                   </button>
-                  <button class="btn btn-secondary btn-sm" title="Start from Page 1" onclick="openReader('${file.id}', '${escapeJs(file.name)}', 1)">
+                  <button class="btn btn-secondary btn-sm" title="${translate('restartFromStart')}" onclick="openReader('${file.id}', '${escapeJs(file.name)}', 1)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
                   </button>
                 ` : `
                   <button class="btn btn-primary btn-sm" onclick="openReader('${file.id}', '${escapeJs(file.name)}', 1)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                    Read
+                    ${translate('readAction')}
                   </button>
                 `}
               </div>
@@ -2356,7 +2537,7 @@
       if (gasUrl) {
         try {
           showStatus('Streaming document via Google Apps Script bridge...');
-          const targetUrl = `${gasUrl}?action=get&id=${encodeURIComponent(fileId)}`;
+          const targetUrl = getBridgeRequestUrl(gasUrl, { action: 'get', id: fileId });
           const resp = await fetch(targetUrl);
           const responseText = await resp.text();
           if (!resp.ok) {
@@ -2464,8 +2645,12 @@
 
       for (let offset = 0; offset < totalBytes;) {
         const length = Math.min(chunkSize, totalBytes - offset);
-        const targetUrl = `${gasUrl}?action=chunk&id=${encodeURIComponent(fileId)}` +
-          `&offset=${offset}&length=${length}`;
+        const targetUrl = getBridgeRequestUrl(gasUrl, {
+          action: 'chunk',
+          id: fileId,
+          offset: String(offset),
+          length: String(length)
+        });
         const response = await fetch(targetUrl);
         const responseText = await response.text();
         if (!response.ok) {
@@ -3021,6 +3206,7 @@
 
     function openSettingsModal() {
       $('#cfg-gas-url').val(appConfig.gasEndpoint || DEFAULT_GAS_ENDPOINT);
+      $('#cfg-gas-secret').val(appConfig.gasSecret || '');
       $('#cfg-client-id').val(appConfig.clientId || '');
       $('#cfg-api-key').val(appConfig.apiKey || '');
       updateHistoryCountDisplay();
@@ -3077,9 +3263,10 @@
 
     $('#btn-save-settings').on('click', () => {
       const gas = $('#cfg-gas-url').val().trim() || DEFAULT_GAS_ENDPOINT;
+      const secret = $('#cfg-gas-secret').val().trim();
       const cid = $('#cfg-client-id').val().trim();
       const key = $('#cfg-api-key').val().trim();
-      saveAppConfig({ gasEndpoint: gas, clientId: cid, apiKey: key });
+      saveAppConfig({ gasEndpoint: gas, gasSecret: secret, clientId: cid, apiKey: key });
       initGoogleServices();
       closeModals();
       alert('Settings saved successfully.');
@@ -3110,9 +3297,26 @@
     });
 
     // Bridge update copy helper
-    const BRIDGE_SOURCE_CODE = `function doGet(e) {
+    const BRIDGE_SOURCE_CODE = `function getBridgeSecret() {
+  return PropertiesService.getScriptProperties().getProperty('FLIPDRIVE_SECRET') || '';
+}
+
+function isAuthorizedRequest(params) {
+  var providedKey = String(params.key || params.token || params.secret || '').trim();
+  var expectedKey = getBridgeSecret();
+  if (!expectedKey) return false;
+  return providedKey === expectedKey;
+}
+
+function doGet(e) {
   try {
     var params = (e && e.parameter) ? e.parameter : {};
+    if (!isAuthorizedRequest(params)) {
+      return createJsonResponse({
+        status: "error",
+        message: "Unauthorized request. Set FLIPDRIVE_SECRET in Apps Script properties and include the matching key parameter."
+      });
+    }
     var action = params.action;
     if (!action) {
       if (params.folderId || params.folder) action = 'list';
@@ -3394,6 +3598,11 @@ function authorizeBridge() {
       renderContinueShelf();
       renderCatalogueGrid([]);
     }
+
+    document.querySelectorAll('#language-select, #reader-language-select').forEach((select) => {
+      select.addEventListener('change', () => applyLanguage(select.value));
+    });
+    applyLanguage(localStorage.getItem(STORAGE_KEY_LANGUAGE) || 'en');
 
     // Launch app
     initApp();

@@ -97,6 +97,15 @@
       z-index: 2000;
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
+    #reader-language-select {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      color: #fff;
+      padding: 6px 10px;
+      font: inherit;
+      font-size: 13px;
+    }
     body.reader-toolbar-hidden #toolbar {
       opacity: 0;
       transform: translate(-50%, 20px);
@@ -264,19 +273,19 @@
 <body>
 
   <div id="top-nav">
-    <a href="index.html" class="nav-btn">
+    <a href="index.html" class="nav-btn" data-i18n="backToCatalogue">
       &larr; Back to Catalogue
     </a>
   </div>
 
   <div id="resume-toast">
     <span id="resume-text">Resumed at page 1</span>
-    <button id="btn-restart">Restart at Page 1</button>
+    <button id="btn-restart" data-i18n="restartPage">Restart at Page 1</button>
   </div>
 
   <div id="loading">
     <div class="spinner"></div>
-    <span>Loading publication...</span>
+    <span data-i18n="loadingPublication">Loading publication...</span>
   </div>
 
   <div id="flipbook-viewport">
@@ -289,28 +298,84 @@
   </div>
 
   <div id="toolbar">
-    <label class="reader-mode-toggle" title="Switch between flipbook and page-by-page reading">
+    <label class="reader-mode-toggle" title="Switch between flipbook and page-by-page reading" data-i18n-title="switchReadingMode">
       <input type="checkbox" id="flipbook-mode" checked>
-      Flipbook
+      <span data-i18n="flipbook">Flipbook</span>
     </label>
-    <button class="tool-btn" id="prev-btn">&lsaquo; Prev</button>
+    <button class="tool-btn" id="prev-btn">&lsaquo; <span data-i18n="previous">Prev</span></button>
     <div id="page-info">
-      <input type="number" id="page-input" min="1" value="1" aria-label="Go to page">
+      <input type="number" id="page-input" min="1" value="1" aria-label="Go to page" title="Go to page" data-i18n-title="pageInput" data-i18n-aria-label="pageInput">
       <span>/ <span id="total-pages">-</span></span>
     </div>
-    <button class="tool-btn" id="next-btn">Next &rsaquo;</button>
-    <button class="tool-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>
-    <button class="tool-btn" id="zoom-reset" title="Reset zoom">100%</button>
-    <button class="tool-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+    <button class="tool-btn" id="next-btn"><span data-i18n="next">Next</span> &rsaquo;</button>
+    <button class="tool-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out" data-i18n-title="zoomOut" data-i18n-aria-label="zoomOut">−</button>
+    <button class="tool-btn" id="zoom-reset" title="Reset zoom" data-i18n-title="resetZoom">100%</button>
+    <button class="tool-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in" data-i18n-title="zoomIn" data-i18n-aria-label="zoomIn">+</button>
+    <select id="reader-language-select" aria-label="Language" data-i18n-aria-label="language">
+      <option value="en">English</option>
+      <option value="kn">ಕನ್ನಡ</option>
+      <option value="sa">संस्कृतम्</option>
+    </select>
   </div>
 
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
     const STORAGE_KEY_PROGRESS = 'flipdrive_reading_progress';
+    const STORAGE_KEY_LANGUAGE = 'flipdrive_language';
     const DEFAULT_GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzadHLrOFoiZfPf0GiWK8zIIt5yEiN7kPIgoMBM1Yl267ApwX0k74RlH2DMvzv7n9Lg/exec";
 
+    const READER_TRANSLATIONS = {
+      en: {
+        language: 'Language', backToCatalogue: '← Back to Catalogue', restartPage: 'Restart at Page 1',
+        loadingPublication: 'Loading publication...', switchReadingMode: 'Switch between flipbook and page-by-page reading',
+        flipbook: 'Flipbook', previous: 'Prev', next: 'Next', pageInput: 'Go to page',
+        zoomOut: 'Zoom out', resetZoom: 'Reset zoom', zoomIn: 'Zoom in'
+      },
+      kn: {
+        language: 'ಭಾಷೆ', backToCatalogue: '← ಕ್ಯಾಟಲಾಗ್‌ಗೆ ಹಿಂತಿರುಗಿ', restartPage: '1ನೇ ಪುಟದಿಂದ ಮತ್ತೆ ಪ್ರಾರಂಭಿಸಿ',
+        loadingPublication: 'ಪ್ರಕಟಣೆ ಲೋಡ್ ಆಗುತ್ತಿದೆ...', switchReadingMode: 'ಪುಟ ತಿರುಗಿಸುವ ಅಥವಾ ಒಂದೊಂದೇ ಪುಟ ಓದುವ ವಿಧಾನ ಆಯ್ಕೆಮಾಡಿ',
+        flipbook: 'ಪುಟ ತಿರುಗಿಸುವಿಕೆ', previous: 'ಹಿಂದೆ', next: 'ಮುಂದೆ', pageInput: 'ಪುಟಕ್ಕೆ ಹೋಗಿ',
+        zoomOut: 'ಚಿಕ್ಕದಾಗಿಸಿ', resetZoom: 'ಝೂಮ್ ಮರುಹೊಂದಿಸಿ', zoomIn: 'ದೊಡ್ಡದಾಗಿಸಿ'
+      },
+      sa: {
+        language: 'भाषा', backToCatalogue: '← सूचिकायाः प्रति', restartPage: 'प्रथमपृष्ठात् पुनः आरभत',
+        loadingPublication: 'प्रकाशनं लोड् भवति...', switchReadingMode: 'पृष्ठपरिवर्तनं वा पृष्ठशः पठनं वा चिनुत',
+        flipbook: 'पृष्ठपरिवर्तनम्', previous: 'पूर्वम्', next: 'अग्रिमम्', pageInput: 'पृष्ठं गच्छतु',
+        zoomOut: 'लघुकरोतु', resetZoom: 'विस्तारं पुनः स्थापयतु', zoomIn: 'विस्तारयतु'
+      }
+    };
+
+    function applyReaderLanguage(language) {
+      const selectedLanguage = READER_TRANSLATIONS[language] ? language : 'en';
+      const translations = READER_TRANSLATIONS[selectedLanguage];
+      document.documentElement.lang = selectedLanguage;
+      document.querySelectorAll('[data-i18n]').forEach((element) => {
+        const text = translations[element.dataset.i18n];
+        if (text) element.textContent = text;
+      });
+      document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+        const text = translations[element.dataset.i18nTitle];
+        if (text) element.setAttribute('title', text);
+      });
+      document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+        const text = translations[element.dataset.i18nAriaLabel];
+        if (text) element.setAttribute('aria-label', text);
+      });
+      document.getElementById('reader-language-select').value = selectedLanguage;
+      localStorage.setItem(STORAGE_KEY_LANGUAGE, selectedLanguage);
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
+    const BRIDGE_SECRET = (localStorage.getItem('flipdrive_gas_secret') || urlParams.get('secret') || '').trim();
+    function buildBridgeUrl(params = {}) {
+      const query = new URLSearchParams(params);
+      if (!BRIDGE_SECRET) {
+        throw new Error('The Google Apps Script bridge secret is missing. Configure it in your app settings and ensure the same secret is set in the bridge script.');
+      }
+      query.set('key', BRIDGE_SECRET);
+      return `${DEFAULT_GAS_ENDPOINT}?${query.toString()}`;
+    }
     const driveFileId = urlParams.get('id');
     const directPdf = urlParams.get('pdf');
     const requestedPage = parseInt(urlParams.get('page'), 10);
@@ -363,7 +428,7 @@
           pdfDoc = await pdfjsLib.getDocument(directPdf).promise;
         } else {
           // Stream via Google Apps Script bridge
-          const resp = await fetch(`${DEFAULT_GAS_ENDPOINT}?id=${driveFileId}`);
+          const resp = await fetch(buildBridgeUrl({ id: driveFileId }));
           const data = await resp.json();
           if (data.status === 'error') {
             throw new Error(data.message || 'Apps Script bridge failed to fetch file.');
@@ -602,8 +667,12 @@
       const pdfBytes = new Uint8Array(totalBytes);
       for (let offset = 0; offset < totalBytes;) {
         const length = Math.min(chunkSize, totalBytes - offset);
-        const url = `${DEFAULT_GAS_ENDPOINT}?action=chunk&id=${encodeURIComponent(driveFileId)}` +
-          `&offset=${offset}&length=${length}`;
+        const url = buildBridgeUrl({
+          action: 'chunk',
+          id: driveFileId,
+          offset: String(offset),
+          length: String(length)
+        });
         const response = await fetch(url);
         const chunk = await response.json();
         if (!response.ok || chunk.status !== 'success' || !chunk.base64) {
@@ -712,6 +781,8 @@
 
     $('#prev-btn').on('click', () => $('#flipbook').turn('previous'));
     $('#next-btn').on('click', () => $('#flipbook').turn('next'));
+    $('#reader-language-select').on('change', (event) => applyReaderLanguage(event.target.value));
+    applyReaderLanguage(localStorage.getItem(STORAGE_KEY_LANGUAGE) || 'en');
 
     window.addEventListener('resize', () => {
       const isMobile = window.innerWidth <= 768;
