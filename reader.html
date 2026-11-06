@@ -30,12 +30,45 @@
       top: 14px;
       left: 18px;
       z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
-    body.reader-top-nav-hidden #top-nav {
+    body.reader-top-nav-hidden #top-nav .reader-back-link {
       opacity: 0;
       transform: translateY(-100%);
       pointer-events: none;
+    }
+    .reader-home-brand {
+      display: none;
+    }
+    .reader-home-brand:hover,
+    .reader-home-brand:focus-visible {
+      transform: translateY(-2px) rotate(-5deg);
+      box-shadow: 0 8px 22px rgba(59, 130, 246, 0.48);
+    }
+    .reader-home-brand:focus-visible {
+      outline: 2px solid #06b6d4;
+      outline-offset: 3px;
+    }
+    .reader-home-brand svg {
+      width: 21px;
+      height: 21px;
+      color: #fff;
+    }
+    .reader-home-brand:hover .icon-motion,
+    .reader-home-brand:focus-visible .icon-motion {
+      transform: rotateY(180deg);
+    }
+    .icon-motion {
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 0.28s cubic-bezier(0.2, 0.75, 0.25, 1);
+    }
+    .tool-btn:hover .icon-motion,
+    .tool-btn:focus-visible .icon-motion {
+      transform: scale(1.12) rotate(-5deg);
     }
     .nav-btn {
       background: rgba(30, 41, 59, 0.85);
@@ -268,12 +301,27 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 <body>
 
   <div id="top-nav">
-    <a href="index.html" class="nav-btn" data-i18n="backToCatalogue">
+    <a href="index.html" class="reader-home-brand" aria-label="FlipDrive home" title="FlipDrive Home">
+      <svg class="icon-motion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+    </a>
+    <a href="index.html" class="nav-btn reader-back-link" data-i18n="backToCatalogue">
       &larr; Back to Catalogue
     </a>
   </div>

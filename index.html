@@ -113,6 +113,44 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      isolation: isolate;
+      overflow: hidden;
+      transition: padding 0.28s ease, background-color 0.28s ease, box-shadow 0.28s ease;
+      animation: header-enter 0.5s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+    }
+
+    header::before {
+      content: "";
+      position: absolute;
+      inset: -80% 35% -80% -20%;
+      z-index: 0;
+      background: radial-gradient(ellipse, rgba(59, 130, 246, 0.16), transparent 68%);
+      opacity: 0.75;
+      transform: translateX(-8%);
+      transition: transform 0.55s ease, opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    header > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    header.nav-scrolled {
+      padding-top: 9px;
+      padding-bottom: 9px;
+      background-color: rgba(11, 15, 25, 0.94);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.2);
+    }
+
+    header.nav-scrolled::before {
+      opacity: 1;
+      transform: translateX(14%);
+    }
+
+    @keyframes header-enter {
+      from { opacity: 0; transform: translateY(-12px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .logo-container {
@@ -120,6 +158,10 @@
       align-items: center;
       gap: 12px;
       cursor: pointer;
+      color: inherit;
+      text-decoration: none;
+      position: relative;
+      z-index: 1;
     }
 
     .logo-icon {
@@ -131,6 +173,46 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      transition: transform 0.3s cubic-bezier(0.2, 0.75, 0.25, 1), box-shadow 0.3s ease;
+    }
+
+    .logo-container:hover .logo-icon,
+    .logo-container:focus-visible .logo-icon {
+      transform: translateY(-2px) rotate(-5deg) scale(1.06);
+      box-shadow: 0 7px 18px rgba(59, 130, 246, 0.45);
+    }
+
+    .logo-container:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 5px;
+      border-radius: 6px;
+    }
+
+    .icon-motion {
+      transform-box: fill-box;
+      transform-origin: center;
+      transition: transform 0.28s cubic-bezier(0.2, 0.75, 0.25, 1), color 0.2s ease;
+    }
+
+    .btn:hover .icon-motion,
+    .btn:focus-visible .icon-motion,
+    .folder-pill:hover .icon-motion,
+    .folder-pill:focus-visible .icon-motion {
+      transform: scale(1.12) rotate(-5deg);
+    }
+
+    .logo-icon .icon-motion {
+      transition: transform 0.35s cubic-bezier(0.2, 0.75, 0.25, 1);
+    }
+
+    .logo-container:hover .logo-icon .icon-motion,
+    .logo-container:focus-visible .logo-icon .icon-motion {
+      transform: rotateY(180deg);
+    }
+
+    .reader-home-brand:hover .icon-motion,
+    .reader-home-brand:focus-visible .icon-motion {
+      transform: rotateY(180deg);
     }
 
     .logo-text {
@@ -673,6 +755,27 @@
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
+    .reader-home-brand {
+      display: none;
+    }
+
+    .reader-home-brand:hover,
+    .reader-home-brand:focus-visible {
+      transform: translateY(-2px) rotate(-5deg);
+      box-shadow: 0 8px 22px rgba(59, 130, 246, 0.48);
+    }
+
+    .reader-home-brand:focus-visible {
+      outline: 2px solid var(--accent-cyan);
+      outline-offset: 3px;
+    }
+
+    .reader-home-brand svg {
+      width: 21px;
+      height: 21px;
+      color: #fff;
+    }
+
     #view-reader.reader-topbar-hidden .reader-topbar {
       opacity: 0;
       transform: translateY(-100%);
@@ -1130,12 +1233,25 @@
     @media (max-width: 768px) {
       header {
         padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
       }
       .logo-badge {
         display: none;
       }
       .folder-pill {
         max-width: 160px;
+      }
+      .header-center {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+      }
+      .header-actions {
+        gap: 6px;
+      }
+      .header-actions .sort-select {
+        padding: 7px 8px;
       }
       main {
         padding: 18px 16px 60px;
@@ -1170,6 +1286,15 @@
         font-size: 12px;
       }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1182,20 +1307,20 @@
 
   <!-- Header -->
   <header>
-    <div class="logo-container" id="nav-brand" title="FlipDrive Home">
+    <a class="logo-container" id="nav-brand" href="index.html" title="FlipDrive Home" aria-label="FlipDrive home">
       <div class="logo-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="icon-motion" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
         </svg>
       </div>
       <span class="logo-text">FlipDrive</span>
       <span class="logo-badge">Drive Linker</span>
-    </div>
+    </a>
 
     <div class="header-center">
       <div class="folder-pill" id="btn-active-folder" title="Click to change or authorize folder">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="icon-motion" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
         </svg>
         <span class="folder-pill-name" id="hdr-folder-name">Select Google Drive Folder</span>
@@ -1204,7 +1329,7 @@
 
     <div class="header-actions">
       <button class="btn btn-secondary btn-sm" id="btn-open-linker">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="icon-motion" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
         </svg>
@@ -1218,7 +1343,7 @@
       </select>
 
       <button class="btn btn-ghost btn-sm" id="btn-open-settings" title="Configuration & Settings" data-i18n-title="settings">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="icon-motion" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
@@ -1272,7 +1397,7 @@
     <!-- Category Filter Bar (Subfolders) -->
     <div class="category-filter-bar" id="category-filter-bar" style="display: none;">
       <span class="category-filter-label">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="icon-motion" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
         </svg>
         <span data-i18n="categories">Categories:</span>
@@ -1323,6 +1448,12 @@
   <!-- Reader View: Interactive 3D Flipbook -->
   <div id="view-reader">
     <!-- Reader Top Bar -->
+    <a class="reader-home-brand" id="reader-home-brand" href="index.html" aria-label="FlipDrive home" title="FlipDrive Home">
+      <svg class="icon-motion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+    </a>
     <div class="reader-topbar">
       <button class="btn btn-secondary btn-sm" id="btn-back-to-catalogue">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1350,7 +1481,7 @@
           <option value="sa">संस्कृतम्</option>
         </select>
         <button class="btn btn-ghost btn-sm" id="btn-share-reader" title="Copy link to current page" data-i18n-title="sharePage">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="icon-motion" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="18" cy="5" r="3"/>
             <circle cx="6" cy="12" r="3"/>
             <circle cx="18" cy="19" r="3"/>
@@ -3290,11 +3421,16 @@
       }
     });
 
-    $('#nav-brand').on('click', () => {
+    $('#nav-brand').on('click', (event) => {
       if ($('#view-reader').is(':visible')) {
+        event.preventDefault();
         exitReader();
       }
     });
+
+    window.addEventListener('scroll', () => {
+      document.querySelector('header')?.classList.toggle('nav-scrolled', window.scrollY > 16);
+    }, { passive: true });
 
     // Bridge update copy helper
     const BRIDGE_SOURCE_CODE = `function getBridgeSecret() {

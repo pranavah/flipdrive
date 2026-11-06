@@ -31,6 +31,7 @@ FlipDrive is a lightweight, responsive web application that connects directly to
 - **✨ Realistic 3D Flipbook:** Page-turning physics, drop shadows, responsive single/double page layout, keyboard shortcuts (`←`/`→`), jump-to-page input, and fullscreen mode.
 - **📄 Flexible Reading Views:** Choose the default Flipbook view from the catalogue, or switch between the 3D flipbook and a page-by-page PDF view while reading.
 - **🌐 Language Options:** Switch the navigation and reader controls between English (default), Kannada, and Sanskrit. The selected language is saved in the browser and shared with the reader.
+- **✨ Animated Navigation:** The catalogue header responds to scrolling, and the FlipDrive book mark and navigation icons animate on hover or focus. The persistent FlipDrive mark returns to the catalogue from either reader view. Animations respect reduced-motion preferences.
 - **🚀 Zero Build Step & Zero Hosting Cost:** Works purely with vanilla HTML, CSS, JavaScript, PDF.js, and Turn.js — fully compatible with GitHub Pages or static web servers.
 
 ---
@@ -125,6 +126,7 @@ You can link directly to specific folders or publications:
 - [PDF.js](https://mozilla.github.io/pdf.js/) – High-DPI browser PDF rendering.
 - [Google Apps Script](https://developers.google.com/apps-script) – Zero-storage binary streaming and recursive folder indexing bridge.
 - [Google Identity Services](https://developers.google.com/identity/gsi/web) – Secure OAuth 2.0 authorization and native Google Picker integration.
+- Animated icon and scroll-aware header interaction inspiration: [heroicons-animated](https://github.com/Aniket-508/heroicons-animated) and [animated-header](https://github.com/mehrdadrafiee/animated-header). Implemented with local CSS to keep the static app dependency-free.
 
 ---
 
