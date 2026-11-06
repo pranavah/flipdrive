@@ -29,6 +29,7 @@ FlipDrive is a lightweight, responsive web application that connects directly to
   - Automatically turns to the saved page when opened, accompanied by a non-intrusive resume notification toast with a 1-click option to restart at Page 1.
   - Dynamically updates the saved page as the user flips through the book.
 - **✨ Realistic 3D Flipbook:** Page-turning physics, drop shadows, responsive single/double page layout, keyboard shortcuts (`←`/`→`), jump-to-page input, and fullscreen mode.
+- **📄 Flexible Reading Views:** Choose the default Flipbook view from the catalogue, or switch between the 3D flipbook and a page-by-page PDF view while reading.
 - **🚀 Zero Build Step & Zero Hosting Cost:** Works purely with vanilla HTML, CSS, JavaScript, PDF.js, and Turn.js — fully compatible with GitHub Pages or static web servers.
 
 ---
@@ -41,15 +42,21 @@ Because Google Drive restricts raw cross-origin binary downloads and folder inde
 
 1. Go to [script.google.com](https://script.google.com/) and click **New project** (or open your existing project).
 2. Replace all contents of `Code.gs` with the code from [`GoogleAppsScript_Bridge.js`](GoogleAppsScript_Bridge.js).
-3. Click **Deploy** $\rightarrow$ **Manage deployments** $\rightarrow$ **Edit (pencil icon)**.
+3. In **Project Settings**, enable **Show "appsscript.json" manifest file**. Add the OAuth scopes from [`appsscript.json`](appsscript.json) to the manifest's `oauthScopes` array (merge with any existing scopes).
+   - The `script.external_request` scope is required for downloading large PDFs in chunks through `UrlFetchApp`.
+   - The `drive.readonly` scope is required for reading Drive files. Save the manifest.
+4. In the function menu, select `authorizeBridge`, click **Run**, and approve the requested Google Drive and external-request permissions.
+5. Click **Deploy** $\rightarrow$ **Manage deployments** $\rightarrow$ **Edit (pencil icon)**.
    - If deploying for the first time, click **Deploy** $\rightarrow$ **New deployment** $\rightarrow$ select **Web app**.
-4. Configure the settings:
+6. Configure the settings:
    - **Version:** Select **New version** (Crucial: Google requires a new version for code changes to take effect)
    - **Execute as:** `Me (your-email@gmail.com)`
    - **Who has access:** `Anyone` *(Crucial: Do not select "Only myself" or "Anyone with a Google account")*
-5. Click **Deploy**, approve permissions if prompted, and copy the **Web app URL** (ends in `/exec`).
+7. Click **Deploy** and copy the **Web app URL** (ends in `/exec`).
 
 > **Tip:** In FlipDrive, you can paste this URL into the **Settings (⚙)** modal or the **Bridge Update** prompt at any time to immediately connect your Drive library.
+>
+> Large PDFs are downloaded through authenticated, 512 KB Drive API ranges to avoid Apps Script's whole-file blob limit and keep each response small. The bridge requires both Drive read access and the `script.external_request` scope. Keep **Execute as: Me** so the bridge can access your Drive files.
 
 ---
 
@@ -63,7 +70,7 @@ Because Google Drive restricts raw cross-origin binary downloads and folder inde
 2. Open `index.html` and update `DEFAULT_GAS_ENDPOINT` (around line 527) with your Web App URL, or configure it dynamically via the **Settings (⚙)** modal inside the web interface.
 3. Commit and push:
    ```bash
-   git add index.html GoogleAppsScript_Bridge.js readme.md
+   git add index.html GoogleAppsScript_Bridge.js appsscript.json readme.md
    git commit -m "feat: recursive subfolders as categories and enhanced gas bridge"
    git push
    ```
